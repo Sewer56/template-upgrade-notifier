@@ -29,7 +29,7 @@ jobs:
       issues-created: ${{ steps.notifier.outputs.issues-created }}
       prs-created: ${{ steps.notifier.outputs.prs-created }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check for template upgrades
         id: notifier
