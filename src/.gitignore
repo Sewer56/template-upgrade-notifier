@@ -1,0 +1,34 @@
+target/
+/fuzz/hfuzz_target
+/fuzz/corpus
+/fuzz/artifacts
+
+# Profiling files
+perf.data.old
+perf.data
+flamegraph.svg
+*.prof*
+
+# Code Coverage
+cobertura.xml
+tarpaulin-report.html
+
+# Rust artifacts
+*.rs.bk
+*.rlib
+debug/
+release/
+
+# IDE
+.idea/
+.vscode/settings.json
+
+# Environment and logs
+.env*
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp

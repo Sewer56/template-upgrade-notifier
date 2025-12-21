@@ -1,0 +1,17 @@
+[package]
+name = "template-upgrade-notifier-cli"
+version = "0.1.0"
+edition = "2021"
+description = "CLI for A GitHub Action that scans repositories for outdated template versions and creates upgrade notification issues with LLM-powered auto-fix PRs"
+repository = "https://github.com/Sewer56/template-upgrade-notifier"
+license-file = "LICENSE"
+readme = "README.MD"
+
+[dependencies]
+template-upgrade-notifier = { path = "../template-upgrade-notifier" }
+clap = { version = "4", features = ["derive", "env"] }
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+futures = "0.3"
+octocrab = "0.49"

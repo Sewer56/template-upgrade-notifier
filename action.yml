@@ -1,0 +1,170 @@
+name: 'Template Upgrade Notifier'
+description: 'Scans repositories for outdated template versions and creates upgrade notification issues with optional LLM-powered auto-fix PRs'
+author: 'Sewer56'
+
+branding:
+  icon: 'refresh-cw'
+  color: 'blue'
+
+inputs:
+  token:
+    description: 'GitHub Personal Access Token with issues:write and pull_requests:write scopes'
+    required: true
+
+  migrations-path:
+    description: 'Path to folder containing migration definitions (relative to repository root)'
+    required: false
+    default: 'migrations/'
+
+  dry-run:
+    description: 'When true, preview changes without creating issues or PRs'
+    required: false
+    default: 'false'
+
+  tool-version:
+    description: 'Version of template-upgrade-notifier CLI to use'
+    required: false
+    default: 'latest'
+
+outputs:
+  migrations-found:
+    description: 'Number of migration definitions discovered'
+    value: ${{ steps.run.outputs.migrations-found }}
+
+  issues-created:
+    description: 'Number of upgrade notification issues created'
+    value: ${{ steps.run.outputs.issues-created }}
+
+  prs-created:
+    description: 'Number of auto-fix pull requests created'
+    value: ${{ steps.run.outputs.prs-created }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate Inputs
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.token }}" ]; then
+          echo "::error::Input 'token' is required. Please provide a GitHub Personal Access Token with issues:write and pull_requests:write scopes."
+          exit 1
+        fi
+
+    - name: Detect Platform
+      id: platform
+      shell: bash
+      run: |
+        # Map RUNNER_OS to target OS
+        case "${RUNNER_OS}" in
+          Linux)  echo "os=linux" >> $GITHUB_OUTPUT ;;
+          macOS)  echo "os=darwin" >> $GITHUB_OUTPUT ;;
+          Windows) echo "os=windows" >> $GITHUB_OUTPUT ;;
+          *)
+            echo "::error::Unsupported OS: ${RUNNER_OS}. Supported: Linux, macOS, Windows"
+            exit 1
+            ;;
+        esac
+
+        # Map RUNNER_ARCH to target architecture
+        case "${RUNNER_ARCH}" in
+          X64)   echo "arch=x86_64" >> $GITHUB_OUTPUT ;;
+          ARM64) echo "arch=aarch64" >> $GITHUB_OUTPUT ;;
+          *)
+            echo "::error::Unsupported architecture: ${RUNNER_ARCH}. Supported: X64, ARM64"
+            exit 1
+            ;;
+        esac
+
+        # Set executable extension
+        if [ "${RUNNER_OS}" = "Windows" ]; then
+          echo "ext=.exe" >> $GITHUB_OUTPUT
+        else
+          echo "ext=" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Download Binary
+      id: download
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        VERSION: ${{ inputs.tool-version }}
+        TARGET_OS: ${{ steps.platform.outputs.os }}
+        TARGET_ARCH: ${{ steps.platform.outputs.arch }}
+      run: |
+        REPO="Sewer56/template-upgrade-notifier"
+        INSTALL_DIR="${{ runner.temp }}/tun"
+        mkdir -p "${INSTALL_DIR}"
+
+        # Construct asset pattern
+        PATTERN="template-upgrade-notifier-cli-${TARGET_OS}-${TARGET_ARCH}*"
+
+        echo "Downloading template-upgrade-notifier CLI..."
+        echo "  Version: ${VERSION}"
+        echo "  Platform: ${TARGET_OS}-${TARGET_ARCH}"
+        echo "  Pattern: ${PATTERN}"
+
+        # Download release asset
+        if [ "${VERSION}" = "latest" ]; then
+          if ! gh release download --repo "${REPO}" --pattern "${PATTERN}" --dir "${INSTALL_DIR}"; then
+            echo "::error::Failed to download release asset. Manual download: https://github.com/${REPO}/releases/latest"
+            exit 1
+          fi
+        else
+          if ! gh release download "${VERSION}" --repo "${REPO}" --pattern "${PATTERN}" --dir "${INSTALL_DIR}"; then
+            echo "::error::Failed to download release '${VERSION}'. Manual download: https://github.com/${REPO}/releases/tag/${VERSION}"
+            exit 1
+          fi
+        fi
+
+        echo "install-dir=${INSTALL_DIR}" >> $GITHUB_OUTPUT
+
+    - name: Extract Binary
+      id: extract
+      shell: bash
+      env:
+        INSTALL_DIR: ${{ steps.download.outputs.install-dir }}
+        TARGET_OS: ${{ steps.platform.outputs.os }}
+        EXT: ${{ steps.platform.outputs.ext }}
+      run: |
+        cd "${INSTALL_DIR}"
+
+        # Extract based on platform
+        if [ "${TARGET_OS}" = "windows" ]; then
+          unzip -q *.zip
+        else
+          tar -xzf *.tar.gz
+        fi
+
+        # Make executable
+        chmod +x "template-upgrade-notifier-cli${EXT}" 2>/dev/null || true
+
+        # Add to PATH
+        echo "${INSTALL_DIR}" >> $GITHUB_PATH
+
+        echo "Binary extracted and added to PATH"
+
+    - name: Run Template Upgrade Notifier
+      id: run
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+        MIGRATIONS_PATH: ${{ inputs.migrations-path }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        EXT: ${{ steps.platform.outputs.ext }}
+      run: |
+        # Build command arguments
+        ARGS="--migrations-path ${MIGRATIONS_PATH}"
+
+        if [ "${DRY_RUN}" = "true" ]; then
+          ARGS="${ARGS} --dry-run"
+        fi
+
+        echo "Running template-upgrade-notifier-cli with args: ${ARGS}"
+
+        # Run CLI and capture output
+        template-upgrade-notifier-cli${EXT} ${ARGS} | tee /tmp/tun-output.log
+
+        # Parse outputs (CLI should emit these as KEY=VALUE lines)
+        grep "^MIGRATIONS_FOUND=" /tmp/tun-output.log | cut -d= -f2 | xargs -I{} echo "migrations-found={}" >> $GITHUB_OUTPUT || echo "migrations-found=0" >> $GITHUB_OUTPUT
+        grep "^ISSUES_CREATED=" /tmp/tun-output.log | cut -d= -f2 | xargs -I{} echo "issues-created={}" >> $GITHUB_OUTPUT || echo "issues-created=0" >> $GITHUB_OUTPUT
+        grep "^PRS_CREATED=" /tmp/tun-output.log | cut -d= -f2 | xargs -I{} echo "prs-created={}" >> $GITHUB_OUTPUT || echo "prs-created=0" >> $GITHUB_OUTPUT

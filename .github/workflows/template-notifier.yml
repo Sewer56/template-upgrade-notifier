@@ -1,0 +1,59 @@
+name: Template Upgrade Check
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      migrations-path:
+        description: 'Path to migrations folder'
+        required: false
+        default: 'migrations/'
+      dry-run:
+        description: 'Run in preview mode (no issues/PRs created)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  actions: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  check-upgrades:
+    runs-on: ubuntu-latest
+    outputs:
+      migrations-found: ${{ steps.notifier.outputs.migrations-found }}
+      issues-created: ${{ steps.notifier.outputs.issues-created }}
+      prs-created: ${{ steps.notifier.outputs.prs-created }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for template upgrades
+        id: notifier
+        uses: Sewer56/template-upgrade-notifier@v1
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          migrations-path: ${{ github.event.inputs.migrations-path || 'migrations/' }}
+          dry-run: ${{ github.event.inputs.dry-run || 'false' }}
+
+      - name: Summary
+        run: |
+          echo "## Template Upgrade Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Migrations found | ${{ steps.notifier.outputs.migrations-found }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Issues created | ${{ steps.notifier.outputs.issues-created }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| PRs created | ${{ steps.notifier.outputs.prs-created }} |" >> $GITHUB_STEP_SUMMARY
+
+  # Prevent GitHub from disabling this workflow after 60 days of inactivity
+  keepalive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: liskin/gh-workflow-keepalive@v1

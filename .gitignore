@@ -1,0 +1,27 @@
+# LLM Prompts
+PROMPT.md
+PROMPT-*.md
+PROMPT.MD
+PROMPT-*.MD
+
+# Rust
+target/
+debug/
+release/
+*.rs.bk
+*.rlib
+*.prof*
+
+# IDE
+.idea/
+*.iml
+
+# Logs and environment
+*.log
+.env*
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp

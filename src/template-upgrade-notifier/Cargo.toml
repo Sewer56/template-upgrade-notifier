@@ -1,0 +1,27 @@
+[package]
+name = "template-upgrade-notifier"
+version = "0.1.0"
+edition = "2021"
+description = "A GitHub Action that scans repositories for outdated template versions and creates upgrade notification issues with LLM-powered auto-fix PRs"
+repository = "https://github.com/Sewer56/template-upgrade-notifier"
+license-file = "LICENSE"
+include = ["src/**/*"]
+readme = "README.MD"
+
+[dependencies]
+octocrab = "0.49"
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+tracing = "0.1"
+toml = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0.140"
+handlebars = "6"
+thiserror = "2"
+url = "2"
+tempfile = "3"
+
+[dev-dependencies]
+tempfile = "3"
+
+
