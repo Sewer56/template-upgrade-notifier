@@ -1,44 +1,5 @@
 # template-upgrade-notifier
 
-## Additional Setup Required!!
-
-<!-- DELETE THIS SECTION AFTER COMPLETING SETUP -->
-
-Additional setup might be required.
-Once you do the stuff under this text, delete this section.
-
-### Code Coverage
-To setup code coverage for this project:
-
-1. Go to [Codecov][codecov], add your project.
-2. Go to [Settings -> Secrets and variables -> Actions][gh-actions-secrets] in your repo and add a repository secret named `CODECOV_TOKEN`.
-3. Do the same in [Settings -> Secrets and variables -> Dependabot][gh-actions-dependabot].
-
-The instructions on the Codecov page will provide the token to use.
-
-
-### Setup API Key (crates.io)
-
-You'll need to set up an API key to publish to `crates.io` on tag.
-
-- Generate your API key in [crates.io (Account Settings -> API Tokens)][crates-io-key].
-- Go to [Settings -> Secrets and variables -> Actions][gh-actions-secrets] in your repo and add environment secret named `CRATES_IO_TOKEN`.
-- Paste your API key.
-
-
-
-
-### Fill in README Documentation
-
-This repository uses a two-level README structure:
-
-| File | Purpose | What to Write |
-|------|---------|---------------|
-| `README.MD` (this file) | GitHub landing page | Project overview, quick start example, badges |
-| [`src/template-upgrade-notifier/README.MD`](./src/template-upgrade-notifier/README.MD) | crates.io page | Detailed features, installation, comprehensive usage examples |
-
------------------------
-
 [![Crates.io](https://img.shields.io/crates/v/template-upgrade-notifier.svg)](https://crates.io/crates/template-upgrade-notifier)
 [![Docs.rs](https://docs.rs/template-upgrade-notifier/badge.svg)](https://docs.rs/template-upgrade-notifier)
 [![CI](https://github.com/Sewer56/template-upgrade-notifier/actions/workflows/rust.yml/badge.svg)](https://github.com/Sewer56/template-upgrade-notifier/actions)
@@ -47,22 +8,41 @@ A GitHub Action that scans repositories for outdated template versions and creat
 
 ## Quick Start
 
-Add to your `Cargo.toml`:
+Install the CLI:
 
-```toml
-[dependencies]
-template-upgrade-notifier = "0.1.0"
+```bash
+cargo install template-upgrade-notifier-cli
 ```
 
-```rust
-// TODO: Add a minimal example showing the most common use case
+Run a dry-run scan:
+
+```bash
+template-upgrade-notifier-cli \
+    --migrations-path ./migrations \
+    --token "$GITHUB_TOKEN" \
+    --dry-run
 ```
-See the [template-upgrade-notifier crate documentation](./src/template-upgrade-notifier/README.MD) for detailed usage.
+
+For library usage, see the [template-upgrade-notifier crate documentation](./src/template-upgrade-notifier/README.MD).
+
+## Migration Structure
+
+Migrations are defined in folders containing:
+
+```
+migrations/
+  my-migration/
+    metadata.toml     # old_string, new_string, target_file
+    issue-template.md # Handlebars template for issues
+    pr-template.md    # Handlebars template for PRs
+```
+
+See the [library documentation](./src/template-upgrade-notifier/README.MD) for full configuration details.
 
 ## Crates
 
-- [template-upgrade-notifier](./src/template-upgrade-notifier/README.MD): Core library <!-- TODO: Update description -->
-- [cli](./src/cli/README.MD): Command-line interface <!-- TODO: Update description -->
+- [template-upgrade-notifier](./src/template-upgrade-notifier/README.MD): Core library for template version discovery and upgrade notification
+- [cli](./src/cli/README.MD): Command-line tool for running template upgrade scans
 
 ## Developer Manual
 
