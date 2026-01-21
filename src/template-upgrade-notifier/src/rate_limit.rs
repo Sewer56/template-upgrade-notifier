@@ -61,7 +61,7 @@ pub async fn check_core_rate_limit(octocrab: &Octocrab) -> Result<RateLimitInfo,
 /// Waits if the rate limit is low, returning true if we waited.
 ///
 /// This function proactively waits when remaining requests fall below
-/// [`MIN_REMAINING_THRESHOLD`] to avoid hitting hard limits.
+/// `MIN_REMAINING_THRESHOLD` to avoid hitting hard limits.
 ///
 /// # Arguments
 ///
