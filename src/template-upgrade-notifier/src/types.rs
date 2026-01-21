@@ -81,11 +81,11 @@ pub enum PrError {
     #[error("Failed to clone repository: {message}")]
     CloneFailed { message: String },
 
-    /// OpenCode invocation failed.
+    /// OpenCode invocation failed (legacy - OpenCode is now stubbed out).
     #[error("OpenCode invocation failed: {message}")]
     OpenCodeFailed { message: String },
 
-    /// OpenCode timed out.
+    /// OpenCode timed out (legacy - OpenCode is now stubbed out).
     #[error("OpenCode timed out after {timeout_secs} seconds")]
     Timeout { timeout_secs: u64 },
 
@@ -93,8 +93,8 @@ pub enum PrError {
     #[error("Failed to push changes: {message}")]
     PushFailed { message: String },
 
-    /// No changes made by OpenCode.
-    #[error("No changes were made by OpenCode")]
+    /// No changes made (legacy - code generation is now stubbed out).
+    #[error("No changes were made")]
     NoChanges,
 }
 
@@ -224,7 +224,7 @@ pub enum PrStatus {
         error: String,
     },
 
-    /// OpenCode timed out during PR generation.
+    /// Timed out during PR generation (legacy - code generation is now stubbed out).
     TimedOut,
 }
 

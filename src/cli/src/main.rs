@@ -34,7 +34,7 @@ struct Args {
     #[arg(long, default_value_t = 5)]
     concurrency: usize,
 
-    /// Enable auto-PR generation with OpenCode.
+    /// Enable auto-PR generation (stubbed - no code changes will be made).
     #[arg(long)]
     auto_pr: bool,
 }

@@ -1,7 +1,7 @@
-//! Pull request creation with OpenCode integration.
+//! Pull request creation for template upgrades.
 //!
-//! This module handles creating auto-fix PRs using OpenCode LLM to
-//! generate the necessary changes.
+//! This module handles creating upgrade PRs. Note: The code generation
+//! functionality is currently stubbed out and will not make changes.
 
 use crate::rate_limit::ensure_core_rate_limit;
 use crate::templates::{generate_branch_name, generate_pr_title, TemplateRenderer};
@@ -9,19 +9,15 @@ use crate::types::{DiscoveredRepository, Migration, PrError, PrStatus, UpgradePR
 use octocrab::Octocrab;
 use std::path::Path;
 use std::process::Stdio;
-use std::time::Duration;
 use tokio::process::Command;
-use tracing::{debug, error, info, info_span, warn, Instrument};
+use tracing::{debug, error, info, info_span, Instrument};
 
-/// Default timeout for OpenCode invocation (15 minutes).
-const OPENCODE_TIMEOUT_SECS: u64 = 900;
-
-/// Creates an upgrade PR using OpenCode to generate changes.
+/// Creates an upgrade PR for template migrations.
 ///
 /// This function:
 /// 1. Clones the repository to a temp directory
-/// 2. Invokes OpenCode with migration instructions
-/// 3. Creates a branch and pushes changes
+/// 2. Creates a branch (note: code generation is stubbed out)
+/// 3. Checks for changes and pushes if any exist
 /// 4. Creates a PR via GitHub API
 ///
 /// # Arguments
@@ -65,24 +61,13 @@ pub async fn create_pr(
         // Create and checkout branch
         create_branch(temp_dir.path(), &branch_name).await?;
 
-        // Invoke OpenCode
+        // Invoke stubbed code generation (no-op)
         match invoke_opencode(temp_dir.path(), migration).await {
             Ok(()) => {
-                debug!("OpenCode completed successfully");
-            }
-            Err(PrError::Timeout { .. }) => {
-                warn!("OpenCode timed out");
-                return Ok(UpgradePR {
-                    repository: repository.clone(),
-                    migration_id: migration.id.clone(),
-                    branch_name,
-                    title,
-                    body: String::new(),
-                    status: PrStatus::TimedOut,
-                });
+                debug!("Code generation step completed (stubbed)");
             }
             Err(e) => {
-                error!(error = %e, "OpenCode failed");
+                error!(error = %e, "Code generation failed");
                 return Ok(UpgradePR {
                     repository: repository.clone(),
                     migration_id: migration.id.clone(),
@@ -98,7 +83,7 @@ pub async fn create_pr(
 
         // Check if there are changes
         if !has_changes(temp_dir.path()).await? {
-            info!("No changes made by OpenCode");
+            info!("No changes detected (code generation is stubbed)");
             return Ok(UpgradePR {
                 repository: repository.clone(),
                 migration_id: migration.id.clone(),
@@ -202,52 +187,15 @@ async fn create_branch(path: &Path, branch_name: &str) -> Result<(), PrError> {
     Ok(())
 }
 
-/// Invokes OpenCode to apply migration changes.
+/// Stubbed function that previously invoked OpenCode to apply migration changes.
+///
+/// This function is now stubbed out and immediately returns Ok without making any changes.
+/// When called, it will result in no file modifications, which causes the PR creation
+/// process to skip PR generation with a "no changes made" status.
+#[allow(unused_variables)]
 async fn invoke_opencode(path: &Path, migration: &Migration) -> Result<(), PrError> {
-    info!("Invoking OpenCode");
-
-    let prompt = format!(
-        "Apply the following template migration:\n\n\
-        - Update from version: {}\n\
-        - Update to version: {}\n\
-        - Target file: {}\n\
-        - Migration guide: {}\n\n\
-        Please update the file to use the new version and apply any necessary changes \
-        according to the migration guide.",
-        migration.old_string,
-        migration.new_string,
-        migration.target_file,
-        migration.migration_guide_link
-    );
-
-    let result = tokio::time::timeout(
-        Duration::from_secs(OPENCODE_TIMEOUT_SECS),
-        Command::new("opencode")
-            .args(["--prompt", &prompt])
-            .current_dir(path)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output(),
-    )
-    .await;
-
-    match result {
-        Ok(Ok(output)) => {
-            if !output.status.success() {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                return Err(PrError::OpenCodeFailed {
-                    message: format!("OpenCode exited with error: {stderr}"),
-                });
-            }
-            Ok(())
-        }
-        Ok(Err(e)) => Err(PrError::OpenCodeFailed {
-            message: format!("Failed to execute OpenCode: {e}"),
-        }),
-        Err(_) => Err(PrError::Timeout {
-            timeout_secs: OPENCODE_TIMEOUT_SECS,
-        }),
-    }
+    debug!("OpenCode invocation stubbed - no changes will be made");
+    Ok(())
 }
 
 /// Checks if there are uncommitted changes.
