@@ -75,19 +75,19 @@ Handlebars template for the auto-fix PR body.
 
 Both issue and PR templates support these Handlebars variables:
 
-| Variable | Description |
-|----------|-------------|
-| `{{old_string}}` | Version string being replaced |
-| `{{new_string}}` | New version string |
-| `{{migration_guide_link}}` | URL to migration documentation |
-| `{{target_file}}` | Name of file containing version string |
+| Variable                   | Description                            |
+| -------------------------- | -------------------------------------- |
+| `{{old_string}}`           | Version string being replaced          |
+| `{{new_string}}`           | New version string                     |
+| `{{migration_guide_link}}` | URL to migration documentation         |
+| `{{target_file}}`          | Name of file containing version string |
 
 Issue templates also support:
 
-| Variable | Description |
-|----------|-------------|
+| Variable        | Description                                             |
+| --------------- | ------------------------------------------------------- |
 | `{{pr_status}}` | PR status: "pending", "created", "skipped", or "failed" |
-| `{{pr_link}}` | URL to the created PR (empty if not created) |
+| `{{pr_link}}`   | URL to the created PR (empty if not created)            |
 
 ### Conditionals
 

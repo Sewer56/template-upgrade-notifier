@@ -33,20 +33,20 @@ template-upgrade-notifier-cli --help
 
 ## Command-Line Arguments
 
-| Argument | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `--migrations-path <PATH>` | Path to migrations folder | `migrations/` | No |
-| `--token <TOKEN>` | GitHub Personal Access Token | - | Yes (or via `GITHUB_TOKEN` env) |
-| `--dry-run` | Preview changes without creating issues/PRs | `false` | No |
-| `--concurrency <N>` | Maximum concurrent API requests | `5` | No |
-| `--auto-pr` | Enable auto-PR generation with OpenCode | `false` | No |
+| Argument                   | Description                                 | Default       | Required                        |
+| -------------------------- | ------------------------------------------- | ------------- | ------------------------------- |
+| `--migrations-path <PATH>` | Path to migrations folder                   | `migrations/` | No                              |
+| `--token <TOKEN>`          | GitHub Personal Access Token                | -             | Yes (or via `GITHUB_TOKEN` env) |
+| `--dry-run`                | Preview changes without creating issues/PRs | `false`       | No                              |
+| `--concurrency <N>`        | Maximum concurrent API requests             | `5`           | No                              |
+| `--auto-pr`                | Enable auto-PR generation with OpenCode     | `false`       | No                              |
 
 ## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `GITHUB_TOKEN` | GitHub Personal Access Token (alternative to `--token`) |
-| `RUST_LOG` | Logging level filter (e.g., `debug`, `info`, `warn`, `error`) |
+| Variable       | Description                                                   |
+| -------------- | ------------------------------------------------------------- |
+| `GITHUB_TOKEN` | GitHub Personal Access Token (alternative to `--token`)       |
+| `RUST_LOG`     | Logging level filter (e.g., `debug`, `info`, `warn`, `error`) |
 
 ## Examples
 
@@ -78,11 +78,11 @@ template-upgrade-notifier-cli --dry-run
 
 ## Exit Codes
 
-| Code | Description |
-|------|-------------|
-| `0` | Success (all operations completed or dry run) |
-| `1` | Partial failure (some operations failed) |
-| `2` | Critical failure (unable to run) |
+| Code | Description                                   |
+| ---- | --------------------------------------------- |
+| `0`  | Success (all operations completed or dry run) |
+| `1`  | Partial failure (some operations failed)      |
+| `2`  | Critical failure (unable to run)              |
 
 ## License
 

@@ -68,10 +68,23 @@ async fn main() -> ExitCode {
 }
 
 /// Initializes tracing with environment filter support.
+///
+/// Tracing is Rust's structured logging/diagnostics framework. Unlike traditional
+/// logging, it's async-aware and captures contextual, structured data rather than
+/// just text. The subscriber configured here determines how events (from macros
+/// like `info!`, `debug!`, etc.) are collected and displayed.
+///
+/// Sets up the global tracing subscriber with:
+/// - Compact log formatting (single-line output)
+/// - Log level filtering via `RUST_LOG` env var (defaults to "info")
 fn init_tracing() {
     tracing_subscriber::registry()
+        // Use compact formatting without module target paths for cleaner output
         .with(fmt::layer().compact().with_target(false))
+        // Allow runtime log filtering via RUST_LOG env var (e.g., RUST_LOG=debug)
+        // Falls back to "info" level if RUST_LOG is not set or invalid
         .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
+        // Register as the global default subscriber
         .init();
 }
 
