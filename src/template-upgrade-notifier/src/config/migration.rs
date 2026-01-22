@@ -51,18 +51,7 @@ impl Migration {
         debug!(path = %path.display(), migration_id, "Loading migration");
 
         // Load and parse metadata.toml
-        let metadata_path = path.join("metadata.toml");
-        let metadata_content =
-            std::fs::read_to_string(&metadata_path).map_err(|e| ConfigError::IoError {
-                path: metadata_path.display().to_string(),
-                source: e,
-            })?;
-
-        let metadata: MigrationMetadata =
-            toml::from_str(&metadata_content).map_err(|e| ConfigError::TomlError {
-                path: metadata_path.display().to_string(),
-                source: e,
-            })?;
+        let metadata = MigrationMetadata::load(path)?;
 
         // Validate metadata
         metadata.validate(path)?;

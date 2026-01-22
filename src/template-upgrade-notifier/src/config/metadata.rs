@@ -23,6 +23,43 @@ pub struct MigrationMetadata {
 }
 
 impl MigrationMetadata {
+    /// Parses metadata from TOML content.
+    ///
+    /// # Arguments
+    ///
+    /// * `content` - TOML string to parse
+    /// * `path` - Path used for error reporting
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ConfigError::TomlError`] if parsing fails.
+    pub fn parse(content: &str, path: &Path) -> Result<Self, ConfigError> {
+        toml::from_str(content).map_err(|e| ConfigError::TomlError {
+            path: path.display().to_string(),
+            source: e,
+        })
+    }
+
+    /// Loads metadata from a directory containing `metadata.toml`.
+    ///
+    /// # Arguments
+    ///
+    /// * `dir` - Directory containing the `metadata.toml` file
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ConfigError::IoError`] if the file cannot be read,
+    /// or [`ConfigError::TomlError`] if parsing fails.
+    pub fn load(dir: &Path) -> Result<Self, ConfigError> {
+        let metadata_path = dir.join("metadata.toml");
+        let content =
+            std::fs::read_to_string(&metadata_path).map_err(|e| ConfigError::IoError {
+                path: metadata_path.display().to_string(),
+                source: e,
+            })?;
+        Self::parse(&content, &metadata_path)
+    }
+
     /// Validates the metadata fields.
     ///
     /// # Errors
@@ -89,110 +126,112 @@ pub(crate) fn default_target_file() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
-
-    fn parse_metadata(toml_content: &str) -> MigrationMetadata {
-        toml::from_str(toml_content).unwrap()
-    }
 
     #[test]
     fn test_validation_same_old_new() {
-        let temp = TempDir::new().unwrap();
-        let metadata = parse_metadata(
+        let metadata = MigrationMetadata::parse(
             r#"
 old-string = "same"
 new-string = "same"
 "#,
-        );
+            Path::new("test"),
+        )
+        .unwrap();
 
-        let result = metadata.validate(temp.path());
+        let result = metadata.validate(Path::new("test"));
         assert!(matches!(result, Err(ConfigError::ValidationError { .. })));
     }
 
     #[test]
     fn test_validation_empty_old_string() {
-        let temp = TempDir::new().unwrap();
-        let metadata = parse_metadata(
+        let metadata = MigrationMetadata::parse(
             r#"
 old-string = ""
 new-string = "new"
 "#,
-        );
+            Path::new("test"),
+        )
+        .unwrap();
 
-        let result = metadata.validate(temp.path());
+        let result = metadata.validate(Path::new("test"));
         assert!(matches!(result, Err(ConfigError::ValidationError { .. })));
     }
 
     #[test]
     fn test_validation_whitespace_old_string() {
-        let temp = TempDir::new().unwrap();
-        let metadata = parse_metadata(
+        let metadata = MigrationMetadata::parse(
             r#"
 old-string = "   "
 new-string = "new"
 "#,
-        );
+            Path::new("test"),
+        )
+        .unwrap();
 
-        let result = metadata.validate(temp.path());
+        let result = metadata.validate(Path::new("test"));
         assert!(matches!(result, Err(ConfigError::ValidationError { .. })));
     }
 
     #[test]
     fn test_validation_empty_new_string() {
-        let temp = TempDir::new().unwrap();
-        let metadata = parse_metadata(
+        let metadata = MigrationMetadata::parse(
             r#"
 old-string = "old"
 new-string = ""
 "#,
-        );
+            Path::new("test"),
+        )
+        .unwrap();
 
-        let result = metadata.validate(temp.path());
+        let result = metadata.validate(Path::new("test"));
         assert!(matches!(result, Err(ConfigError::ValidationError { .. })));
     }
 
     #[test]
     fn test_validation_whitespace_new_string() {
-        let temp = TempDir::new().unwrap();
-        let metadata = parse_metadata(
+        let metadata = MigrationMetadata::parse(
             r#"
 old-string = "old"
 new-string = "   "
 "#,
-        );
+            Path::new("test"),
+        )
+        .unwrap();
 
-        let result = metadata.validate(temp.path());
+        let result = metadata.validate(Path::new("test"));
         assert!(matches!(result, Err(ConfigError::ValidationError { .. })));
     }
 
     #[test]
     fn test_validation_invalid_url() {
-        let temp = TempDir::new().unwrap();
-        let metadata = parse_metadata(
+        let metadata = MigrationMetadata::parse(
             r#"
 old-string = "old"
 new-string = "new"
 migration-guide-link = "not-a-url"
 "#,
-        );
+            Path::new("test"),
+        )
+        .unwrap();
 
-        let result = metadata.validate(temp.path());
+        let result = metadata.validate(Path::new("test"));
         assert!(matches!(result, Err(ConfigError::ValidationError { .. })));
     }
 
     #[test]
     fn test_validation_valid_metadata() {
-        let temp = TempDir::new().unwrap();
-        let metadata = parse_metadata(
+        let metadata = MigrationMetadata::parse(
             r#"
 old-string = "test:1.0.0"
 new-string = "test:1.0.1"
 migration-guide-link = "https://example.com/guide"
 target-file = "version.txt"
 "#,
-        );
+            Path::new("test"),
+        )
+        .unwrap();
 
-        let result = metadata.validate(temp.path());
+        let result = metadata.validate(Path::new("test"));
         assert!(result.is_ok());
     }
 
