@@ -14,131 +14,6 @@ pub use migration::Migration;
 use std::path::Path;
 use tracing::{debug, info, warn};
 
-/// Loads a single migration from a directory.
-///
-/// The directory must contain:
-/// - `metadata.toml` - Migration configuration
-/// - `issue-template.md` - Issue body template
-/// - `pr-template.md` - PR body template
-///
-/// # Arguments
-///
-/// * `path` - Path to the migration directory
-/// * `migration_id` - Unique identifier for this migration (typically derived from path)
-///
-/// # Errors
-///
-/// Returns [`ConfigError`] if files are missing, invalid, or fail validation.
-pub fn load_migration(path: &Path, migration_id: &str) -> Result<Migration, ConfigError> {
-    debug!(path = %path.display(), migration_id, "Loading migration");
-
-    // Load and parse metadata.toml
-    let metadata_path = path.join("metadata.toml");
-    let metadata_content =
-        std::fs::read_to_string(&metadata_path).map_err(|e| ConfigError::IoError {
-            path: metadata_path.display().to_string(),
-            source: e,
-        })?;
-
-    let metadata: MigrationMetadata =
-        toml::from_str(&metadata_content).map_err(|e| ConfigError::TomlError {
-            path: metadata_path.display().to_string(),
-            source: e,
-        })?;
-
-    // Validate metadata
-    validate_metadata(&metadata, path)?;
-
-    // Load issue template
-    let issue_template_path = path.join("issue-template.md");
-    let issue_template =
-        std::fs::read_to_string(&issue_template_path).map_err(|e| ConfigError::IoError {
-            path: issue_template_path.display().to_string(),
-            source: e,
-        })?;
-
-    if issue_template.trim().is_empty() {
-        return Err(ConfigError::ValidationError {
-            path: issue_template_path.display().to_string(),
-            message: "issue-template.md is empty".to_string(),
-        });
-    }
-
-    // Load PR template
-    let pr_template_path = path.join("pr-template.md");
-    let pr_template =
-        std::fs::read_to_string(&pr_template_path).map_err(|e| ConfigError::IoError {
-            path: pr_template_path.display().to_string(),
-            source: e,
-        })?;
-
-    if pr_template.trim().is_empty() {
-        return Err(ConfigError::ValidationError {
-            path: pr_template_path.display().to_string(),
-            message: "pr-template.md is empty".to_string(),
-        });
-    }
-
-    Ok(Migration {
-        id: migration_id.to_string(),
-        old_string: metadata.old_string,
-        new_string: metadata.new_string,
-        migration_guide_link: metadata.migration_guide_link,
-        target_file: metadata.target_file,
-        issue_template,
-        pr_template,
-    })
-}
-
-/// Validates migration metadata.
-fn validate_metadata(metadata: &MigrationMetadata, path: &Path) -> Result<(), ConfigError> {
-    let path_str = path.display().to_string();
-
-    // Check old_string != new_string
-    if metadata.old_string == metadata.new_string {
-        return Err(ConfigError::ValidationError {
-            path: path_str,
-            message: "old-string and new-string must be different".to_string(),
-        });
-    }
-
-    // Check old_string is not empty
-    if metadata.old_string.trim().is_empty() {
-        return Err(ConfigError::ValidationError {
-            path: path_str,
-            message: "old-string must not be empty".to_string(),
-        });
-    }
-
-    // Check new_string is not empty
-    if metadata.new_string.trim().is_empty() {
-        return Err(ConfigError::ValidationError {
-            path: path_str,
-            message: "new-string must not be empty".to_string(),
-        });
-    }
-
-    // Validate URL format if provided
-    if let Some(ref link) = metadata.migration_guide_link {
-        if url::Url::parse(link).is_err() {
-            return Err(ConfigError::ValidationError {
-                path: path_str,
-                message: format!("migration-guide-link is not a valid URL: {link}"),
-            });
-        }
-    }
-
-    // Validate target_file doesn't contain path separators
-    if metadata.target_file.contains('/') || metadata.target_file.contains('\\') {
-        return Err(ConfigError::ValidationError {
-            path: path_str,
-            message: "target-file must not contain path separators".to_string(),
-        });
-    }
-
-    Ok(())
-}
-
 /// Scans a migrations directory and loads all valid migrations.
 ///
 /// The directory structure should be:
@@ -211,7 +86,7 @@ fn scan_directory_recursive(
                     .to_string_lossy()
                     .to_string();
 
-                match load_migration(&path, &migration_id) {
+                match Migration::load(&path, &migration_id) {
                     Ok(migration) => {
                         debug!(id = migration_id, "Loaded migration");
                         migrations.push(migration);
@@ -261,69 +136,6 @@ target-file = "version.txt"
     }
 
     #[test]
-    fn test_load_valid_migration() {
-        let temp = TempDir::new().unwrap();
-        create_test_migration(temp.path());
-
-        let migration = load_migration(temp.path(), "test/v1").unwrap();
-
-        assert_eq!(migration.id, "test/v1");
-        assert_eq!(migration.old_string, "test:1.0.0");
-        assert_eq!(migration.new_string, "test:1.0.1");
-        assert_eq!(
-            migration.migration_guide_link,
-            Some("https://example.com/guide".to_string())
-        );
-        assert_eq!(migration.target_file, "version.txt");
-    }
-
-    #[test]
-    fn test_load_migration_missing_metadata() {
-        let temp = TempDir::new().unwrap();
-
-        let result = load_migration(temp.path(), "test/v1");
-        assert!(matches!(result, Err(ConfigError::IoError { .. })));
-    }
-
-    #[test]
-    fn test_validation_same_old_new() {
-        let temp = TempDir::new().unwrap();
-        fs::write(
-            temp.path().join("metadata.toml"),
-            r#"
-old-string = "same"
-new-string = "same"
-migration-guide-link = "https://example.com"
-"#,
-        )
-        .unwrap();
-        fs::write(temp.path().join("issue-template.md"), "content").unwrap();
-        fs::write(temp.path().join("pr-template.md"), "content").unwrap();
-
-        let result = load_migration(temp.path(), "test");
-        assert!(matches!(result, Err(ConfigError::ValidationError { .. })));
-    }
-
-    #[test]
-    fn test_validation_invalid_url() {
-        let temp = TempDir::new().unwrap();
-        fs::write(
-            temp.path().join("metadata.toml"),
-            r#"
-old-string = "old"
-new-string = "new"
-migration-guide-link = "not-a-url"
-"#,
-        )
-        .unwrap();
-        fs::write(temp.path().join("issue-template.md"), "content").unwrap();
-        fs::write(temp.path().join("pr-template.md"), "content").unwrap();
-
-        let result = load_migration(temp.path(), "test");
-        assert!(matches!(result, Err(ConfigError::ValidationError { .. })));
-    }
-
-    #[test]
     fn test_scan_migrations() {
         let temp = TempDir::new().unwrap();
 
@@ -339,28 +151,37 @@ migration-guide-link = "not-a-url"
     }
 
     #[test]
-    fn test_default_target_file() {
-        assert_eq!(
-            crate::config::metadata::default_target_file(),
-            "template-version.txt"
-        );
+    fn test_scan_migrations_missing_directory() {
+        let temp = TempDir::new().unwrap();
+        let missing_path = temp.path().join("nonexistent");
+
+        let result = scan_migrations(&missing_path);
+        assert!(matches!(result, Err(ConfigError::MissingFile { .. })));
     }
 
     #[test]
-    fn test_load_migration_without_guide_link() {
+    fn test_scan_migrations_empty_directory() {
         let temp = TempDir::new().unwrap();
-        fs::write(
-            temp.path().join("metadata.toml"),
-            r#"
-old-string = "test:1.0.0"
-new-string = "test:1.0.1"
-"#,
-        )
-        .unwrap();
-        fs::write(temp.path().join("issue-template.md"), "content").unwrap();
-        fs::write(temp.path().join("pr-template.md"), "content").unwrap();
 
-        let migration = load_migration(temp.path(), "test/v1").unwrap();
-        assert_eq!(migration.migration_guide_link, None);
+        let migrations = scan_migrations(temp.path()).unwrap();
+        assert!(migrations.is_empty());
+    }
+
+    #[test]
+    fn test_scan_migrations_multiple() {
+        let temp = TempDir::new().unwrap();
+
+        // Create two migrations
+        let migration1 = temp.path().join("template-a/v1-to-v2");
+        let migration2 = temp.path().join("template-b/v2-to-v3");
+
+        fs::create_dir_all(&migration1).unwrap();
+        fs::create_dir_all(&migration2).unwrap();
+
+        create_test_migration(&migration1);
+        create_test_migration(&migration2);
+
+        let migrations = scan_migrations(temp.path()).unwrap();
+        assert_eq!(migrations.len(), 2);
     }
 }

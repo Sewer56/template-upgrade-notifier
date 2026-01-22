@@ -10,7 +10,7 @@ pub mod runner;
 pub mod summary;
 pub mod templates;
 
-pub use config::{load_migration, scan_migrations, ConfigError, Migration, MigrationMetadata};
+pub use config::{scan_migrations, ConfigError, Migration, MigrationMetadata};
 pub use discovery::{
     discover_repositories, enrich_with_default_branches, get_default_branch, DiscoveredRepository,
     DiscoveryError,

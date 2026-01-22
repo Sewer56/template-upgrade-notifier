@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use template_upgrade_notifier::{load_migration, scan_migrations, ConfigError};
+use template_upgrade_notifier::{scan_migrations, ConfigError, Migration};
 
 fn fixtures_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/migrations")
@@ -9,7 +9,7 @@ fn fixtures_root() -> PathBuf {
 #[test]
 fn load_migration_from_fixture() {
     let migration_dir = fixtures_root().join("acme-template/v1.0.0-to-v1.0.1");
-    let migration = load_migration(&migration_dir, "acme-template/v1.0.0-to-v1.0.1").unwrap();
+    let migration = Migration::load(&migration_dir, "acme-template/v1.0.0-to-v1.0.1").unwrap();
 
     assert_eq!(migration.id, "acme-template/v1.0.0-to-v1.0.1");
     assert_eq!(migration.old_string, "acme:1.0.0");
@@ -32,7 +32,7 @@ fn load_migration_from_fixture() {
 #[test]
 fn load_migration_rejects_invalid_fixture() {
     let migration_dir = fixtures_root().join("broken-template/v1.0.1-to-v1.0.2");
-    let result = load_migration(&migration_dir, "broken-template/v1.0.1-to-v1.0.2");
+    let result = Migration::load(&migration_dir, "broken-template/v1.0.1-to-v1.0.2");
 
     assert!(matches!(result, Err(ConfigError::ValidationError { .. })));
 }
