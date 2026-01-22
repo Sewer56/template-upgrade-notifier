@@ -96,7 +96,7 @@ impl TemplateRenderer {
         let data = json!({
             "old_string": migration.old_string,
             "new_string": migration.new_string,
-            "migration_guide_link": migration.migration_guide_link,
+            "migration_guide_link": migration.migration_guide_link.as_deref().unwrap_or(""),
             "target_file": migration.target_file,
             "pr_status": pr_status.map_or("", |s| s.as_str()),
             "pr_link": pr_link.unwrap_or("")
@@ -123,7 +123,7 @@ impl TemplateRenderer {
         let data = json!({
             "old_string": migration.old_string,
             "new_string": migration.new_string,
-            "migration_guide_link": migration.migration_guide_link,
+            "migration_guide_link": migration.migration_guide_link.as_deref().unwrap_or(""),
             "target_file": migration.target_file
         });
 
@@ -149,7 +149,7 @@ mod tests {
             id: "my-template/v1.0.0-to-v1.0.1".to_string(),
             old_string: "my-template:1.0.0".to_string(),
             new_string: "my-template:1.0.1".to_string(),
-            migration_guide_link: "https://example.com/docs".to_string(),
+            migration_guide_link: Some("https://example.com/docs".to_string()),
             target_file: "template-version.txt".to_string(),
             issue_template: String::new(),
             pr_template: String::new(),

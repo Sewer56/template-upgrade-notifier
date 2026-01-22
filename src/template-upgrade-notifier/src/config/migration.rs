@@ -14,8 +14,8 @@ pub struct Migration {
     /// The version string to upgrade to.
     pub new_string: String,
 
-    /// URL to migration documentation.
-    pub migration_guide_link: String,
+    /// URL to migration documentation (optional).
+    pub migration_guide_link: Option<String>,
 
     /// File name to search for containing the version string.
     pub target_file: String,

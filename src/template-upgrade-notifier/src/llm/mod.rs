@@ -108,13 +108,18 @@ fn build_agent(
 
 /// Builds the migration prompt for the LLM.
 fn build_prompt(migration: &Migration) -> String {
+    let guide_line = migration
+        .migration_guide_link
+        .as_ref()
+        .map(|g| format!("Migration guide: {g}\n"))
+        .unwrap_or_default();
+
     format!(
         "Apply the template migration using the available tools.\n\
 Target file: {target_file}\n\
 Old string: {old_string}\n\
 New string: {new_string}\n\
-Migration guide: {guide}\n\
-\n\
+{guide_line}\
 Steps:\n\
 1) Use glob/grep to locate relevant files.\n\
 2) Update occurrences of the old string to the new string.\n\
@@ -124,7 +129,6 @@ Steps:\n\
         target_file = migration.target_file,
         old_string = migration.old_string,
         new_string = migration.new_string,
-        guide = migration.migration_guide_link,
     )
 }
 

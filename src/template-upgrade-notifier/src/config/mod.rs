@@ -118,15 +118,14 @@ fn validate_metadata(metadata: &MigrationMetadata, path: &Path) -> Result<(), Co
         });
     }
 
-    // Validate URL format
-    if url::Url::parse(&metadata.migration_guide_link).is_err() {
-        return Err(ConfigError::ValidationError {
-            path: path_str,
-            message: format!(
-                "migration-guide-link is not a valid URL: {}",
-                metadata.migration_guide_link
-            ),
-        });
+    // Validate URL format if provided
+    if let Some(ref link) = metadata.migration_guide_link {
+        if url::Url::parse(link).is_err() {
+            return Err(ConfigError::ValidationError {
+                path: path_str,
+                message: format!("migration-guide-link is not a valid URL: {link}"),
+            });
+        }
     }
 
     // Validate target_file doesn't contain path separators
@@ -271,7 +270,10 @@ target-file = "version.txt"
         assert_eq!(migration.id, "test/v1");
         assert_eq!(migration.old_string, "test:1.0.0");
         assert_eq!(migration.new_string, "test:1.0.1");
-        assert_eq!(migration.migration_guide_link, "https://example.com/guide");
+        assert_eq!(
+            migration.migration_guide_link,
+            Some("https://example.com/guide".to_string())
+        );
         assert_eq!(migration.target_file, "version.txt");
     }
 
@@ -342,5 +344,23 @@ migration-guide-link = "not-a-url"
             crate::config::metadata::default_target_file(),
             "template-version.txt"
         );
+    }
+
+    #[test]
+    fn test_load_migration_without_guide_link() {
+        let temp = TempDir::new().unwrap();
+        fs::write(
+            temp.path().join("metadata.toml"),
+            r#"
+old-string = "test:1.0.0"
+new-string = "test:1.0.1"
+"#,
+        )
+        .unwrap();
+        fs::write(temp.path().join("issue-template.md"), "content").unwrap();
+        fs::write(temp.path().join("pr-template.md"), "content").unwrap();
+
+        let migration = load_migration(temp.path(), "test/v1").unwrap();
+        assert_eq!(migration.migration_guide_link, None);
     }
 }

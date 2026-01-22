@@ -16,7 +16,7 @@ fn load_migration_from_fixture() {
     assert_eq!(migration.new_string, "acme:1.0.1");
     assert_eq!(
         migration.migration_guide_link,
-        "https://example.com/acme/upgrade"
+        Some("https://example.com/acme/upgrade".to_string())
     );
     assert_eq!(migration.target_file, "template-version.txt");
     assert_eq!(

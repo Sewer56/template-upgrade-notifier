@@ -267,9 +267,14 @@ async fn commit_and_push(
     run_git_command(path, &["add", "-A"]).await?;
 
     // Commit
+    let guide_line = migration
+        .migration_guide_link
+        .as_ref()
+        .map(|g| format!("\n\nMigration guide: {g}"))
+        .unwrap_or_default();
     let commit_msg = format!(
-        "chore: upgrade {} -> {}\n\nMigration guide: {}",
-        migration.old_string, migration.new_string, migration.migration_guide_link
+        "chore: upgrade {} -> {}{}",
+        migration.old_string, migration.new_string, guide_line
     );
     run_git_command(path, &["commit", "-m", &commit_msg]).await?;
 
@@ -348,7 +353,7 @@ mod tests {
             id: "test/v1".to_string(),
             old_string: "test:1.0.0".to_string(),
             new_string: "test:1.0.1".to_string(),
-            migration_guide_link: "https://example.com".to_string(),
+            migration_guide_link: Some("https://example.com".to_string()),
             target_file: "version.txt".to_string(),
             issue_template: String::new(),
             pr_template: String::new(),

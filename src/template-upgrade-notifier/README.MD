@@ -59,7 +59,7 @@ Configuration for a single migration:
 ```toml
 old-string = "my-template:1.0.0"
 new-string = "my-template:1.0.1"
-migration-guide-link = "https://example.com/docs/v1.0.1-migration"
+migration-guide-link = "https://example.com/docs/v1.0.1-migration"  # Optional
 target-file = "template-version.txt"  # Optional, defaults to "template-version.txt"
 ```
 
@@ -71,7 +71,7 @@ Simple example:
 ```handlebars
 Upgrade Available: {{old_string}} → {{new_string}}
 
-See the migration guide: {{migration_guide_link}}
+{{#if migration_guide_link}}See the migration guide: {{migration_guide_link}}{{/if}}
 
 {{#if (eq pr_status "created")}}
 An automated fix PR has been created: {{pr_link}}
@@ -87,7 +87,7 @@ Simple example:
 Upgrade to {{new_string}}
 
 This PR applies the migration changes automatically.
-See the migration guide: {{migration_guide_link}}
+{{#if migration_guide_link}}See the migration guide: {{migration_guide_link}}{{/if}}
 ```
 
 ### config.toml
@@ -128,12 +128,12 @@ Use `--llm-config-path` to point at a non-default config location.
 
 Both issue and PR templates support these Handlebars variables:
 
-| Variable                   | Description                            |
-| -------------------------- | -------------------------------------- |
-| `{{old_string}}`           | Version string being replaced          |
-| `{{new_string}}`           | New version string                     |
-| `{{migration_guide_link}}` | URL to migration documentation         |
-| `{{target_file}}`          | Name of file containing version string |
+| Variable                   | Description                                          |
+| -------------------------- | ---------------------------------------------------- |
+| `{{old_string}}`           | Version string being replaced                        |
+| `{{new_string}}`           | New version string                                   |
+| `{{migration_guide_link}}` | URL to migration documentation (may be empty string) |
+| `{{target_file}}`          | Name of file containing version string               |
 
 Issue templates also support:
 
