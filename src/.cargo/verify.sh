@@ -21,6 +21,6 @@ echo "Formatting..."
 cargo fmt --all
 
 echo "Publish dry-run..."
-cargo publish --dry-run --quiet --workspace
+cargo publish --dry-run --quiet --workspace --allow-dirty
 
 echo "All checks passed!"

@@ -1,0 +1,4 @@
+old-string = "acme:1.0.0"
+new-string = "acme:1.0.1"
+migration-guide-link = "https://example.com/acme/upgrade"
+target-file = "template-version.txt"

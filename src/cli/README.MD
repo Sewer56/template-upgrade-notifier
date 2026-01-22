@@ -39,14 +39,20 @@ template-upgrade-notifier-cli --help
 | `--token <TOKEN>`          | GitHub Personal Access Token                | -             | Yes (or via `GITHUB_TOKEN` env) |
 | `--dry-run`                | Preview changes without creating issues/PRs | `false`       | No                              |
 | `--concurrency <N>`        | Maximum concurrent API requests             | `5`           | No                              |
-| `--auto-pr`                | Enable auto-PR generation with OpenCode     | `false`       | No                              |
+| `--auto-pr`                | Enable auto-PR generation via serdes-ai     | `false`       | No                              |
+| `--llm-config-path`        | Path to the LLM config file                | none          | No                              |
 
 ## Environment Variables
 
-| Variable       | Description                                                   |
-| -------------- | ------------------------------------------------------------- |
-| `GITHUB_TOKEN` | GitHub Personal Access Token (alternative to `--token`)       |
-| `RUST_LOG`     | Logging level filter (e.g., `debug`, `info`, `warn`, `error`) |
+| Variable                       | Description                                                    |
+| ------------------------------ | ------------------------------------------------------------- |
+| `GITHUB_TOKEN`                | GitHub Personal Access Token (alternative to `--token`)        |
+| `RUST_LOG`                    | Logging level filter (e.g., `debug`, `info`, `warn`, `error`) |
+| `TEMPLATE_UPGRADE_LLM_MODEL` | LLM model spec for env-only configuration             |
+| `OPENAI_API_KEY`             | OpenAI API key                         |
+| `OPENROUTER_API_KEY`          | OpenRouter API key                      |
+| `ANTHROPIC_API_KEY`          | Anthropic API key                       |
+| `GOOGLE_API_KEY`             | Google/Gemini API key                   |
 
 ## Examples
 

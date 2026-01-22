@@ -3,11 +3,47 @@
 //! This module provides functions to discover repositories containing
 //! outdated template versions using GitHub's code search.
 
+use crate::config::Migration;
 use crate::rate_limit::ensure_search_rate_limit;
-use crate::types::{DiscoveredRepository, DiscoveryError, Migration};
 use octocrab::Octocrab;
+use serde::Serialize;
 use std::collections::HashSet;
+use thiserror::Error;
 use tracing::{debug, info, info_span, warn, Instrument};
+
+/// Errors that can occur during repository discovery.
+#[derive(Debug, Error)]
+pub enum DiscoveryError {
+    /// GitHub API error.
+    #[error("GitHub API error: {0}")]
+    GitHubError(#[from] octocrab::Error),
+
+    /// Rate limit exceeded.
+    #[error("Rate limit exceeded, reset at {reset_at}")]
+    RateLimitExceeded { reset_at: u64 },
+}
+
+/// A repository discovered to contain an outdated template version.
+#[derive(Debug, Clone, Serialize)]
+pub struct DiscoveredRepository {
+    /// Repository owner (user or organization).
+    pub owner: String,
+
+    /// Repository name.
+    pub name: String,
+
+    /// Full repository name in "owner/name" format.
+    pub full_name: String,
+
+    /// Path to the file containing the match.
+    pub file_path: String,
+
+    /// GitHub URL to the matched file.
+    pub file_url: String,
+
+    /// Default branch name (e.g., "main").
+    pub default_branch: String,
+}
 
 /// Maximum results from GitHub Code Search API.
 const MAX_SEARCH_RESULTS: usize = 1000;

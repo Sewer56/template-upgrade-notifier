@@ -3,13 +3,82 @@
 //! This module handles creating upgrade notification issues in discovered
 //! repositories, including duplicate detection and permission handling.
 
+use crate::config::Migration;
+use crate::discovery::DiscoveredRepository;
+use crate::pull_requests::PrStatus;
 use crate::rate_limit::ensure_core_rate_limit;
 use crate::templates::{generate_issue_title, TemplateRenderer};
-use crate::types::{
-    DiscoveredRepository, IssueError, IssueStatus, Migration, PrStatus, UpgradeIssue,
-};
 use octocrab::Octocrab;
+use serde::Serialize;
+use thiserror::Error;
 use tracing::{debug, info, info_span, warn, Instrument};
+
+/// Errors that can occur during issue operations.
+#[derive(Debug, Error)]
+pub enum IssueError {
+    /// GitHub API error.
+    #[error("GitHub API error: {0}")]
+    GitHubError(#[from] octocrab::Error),
+
+    /// Permission denied.
+    #[error("Permission denied: no write access to {owner}/{repo}")]
+    PermissionDenied { owner: String, repo: String },
+
+    /// Rate limit exceeded.
+    #[error("Rate limit exceeded, reset at {reset_at}")]
+    RateLimitExceeded { reset_at: u64 },
+
+    /// Template rendering error.
+    #[error("Template rendering error: {0}")]
+    TemplateError(String),
+}
+
+/// Status of an issue creation operation.
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "status", rename_all = "snake_case")]
+pub enum IssueStatus {
+    /// Issue not yet created.
+    Pending,
+
+    /// Issue successfully created.
+    Created {
+        /// GitHub issue number.
+        number: u64,
+        /// GitHub issue URL.
+        url: String,
+    },
+
+    /// Issue creation skipped.
+    Skipped {
+        /// Reason for skipping.
+        reason: String,
+    },
+
+    /// Issue creation failed.
+    Failed {
+        /// Error message.
+        error: String,
+    },
+}
+
+/// A GitHub issue created in a discovered repository.
+#[derive(Debug, Clone)]
+pub struct UpgradeIssue {
+    /// Target repository.
+    pub repository: DiscoveredRepository,
+
+    /// Reference to source migration.
+    pub migration_id: String,
+
+    /// Issue title.
+    pub title: String,
+
+    /// Rendered issue body.
+    pub body: String,
+
+    /// Creation status.
+    pub status: IssueStatus,
+}
 
 /// Creates an upgrade notification issue in a repository.
 ///

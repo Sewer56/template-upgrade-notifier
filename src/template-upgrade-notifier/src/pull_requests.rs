@@ -1,24 +1,133 @@
 //! Pull request creation for template upgrades.
 //!
-//! This module handles creating upgrade PRs. Note: The code generation
-//! functionality is currently stubbed out and will not make changes.
+//! This module handles creating upgrade PRs with LLM-powered code generation
+//! using serdes-ai and coding tools.
 
+use crate::config::Migration;
+use crate::discovery::DiscoveredRepository;
+use crate::llm::apply_migration;
 use crate::rate_limit::ensure_core_rate_limit;
 use crate::templates::{generate_branch_name, generate_pr_title, TemplateRenderer};
-use crate::types::{DiscoveredRepository, Migration, PrError, PrStatus, UpgradePR};
 use octocrab::Octocrab;
+use serde::Serialize;
 use std::path::Path;
 use std::process::Stdio;
+use thiserror::Error;
 use tokio::process::Command;
 use tracing::{debug, error, info, info_span, Instrument};
+
+/// Errors that can occur during PR operations.
+#[derive(Debug, Error)]
+pub enum PrError {
+    /// GitHub API error.
+    #[error("GitHub API error: {0}")]
+    GitHubError(#[from] octocrab::Error),
+
+    /// Clone failed.
+    #[error("Failed to clone repository: {message}")]
+    CloneFailed { message: String },
+
+    /// LLM invocation failed.
+    #[error("LLM invocation failed: {message}")]
+    LlmFailed { message: String },
+
+    /// LLM timed out.
+    #[error("LLM timed out after {timeout_secs} seconds")]
+    Timeout { timeout_secs: u64 },
+
+    /// Push failed.
+    #[error("Failed to push changes: {message}")]
+    PushFailed { message: String },
+
+    /// No changes were made.
+    #[error("No changes were made")]
+    NoChanges,
+}
+
+/// Status of a PR creation operation.
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "status", rename_all = "snake_case")]
+pub enum PrStatus {
+    /// PR not yet created.
+    Pending,
+
+    /// PR successfully created.
+    Created {
+        /// GitHub PR number.
+        number: u64,
+        /// GitHub PR URL.
+        url: String,
+    },
+
+    /// PR creation skipped.
+    Skipped {
+        /// Reason for skipping.
+        reason: String,
+    },
+
+    /// PR creation failed.
+    Failed {
+        /// Error message.
+        error: String,
+    },
+
+    /// Timed out during PR generation.
+    TimedOut,
+}
+
+impl PrStatus {
+    /// Returns the status as a string for template rendering.
+    #[must_use]
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Pending => "pending",
+            Self::Created { .. } => "created",
+            Self::Skipped { .. } => "skipped",
+            Self::Failed { .. } => "failed",
+            Self::TimedOut => "failed",
+        }
+    }
+
+    /// Returns the PR URL if created.
+    #[must_use]
+    pub fn url(&self) -> Option<&str> {
+        match self {
+            Self::Created { url, .. } => Some(url),
+            _ => None,
+        }
+    }
+}
+
+/// A pull request created to apply a migration.
+#[derive(Debug, Clone)]
+pub struct UpgradePR {
+    /// Target repository.
+    pub repository: DiscoveredRepository,
+
+    /// Reference to source migration.
+    pub migration_id: String,
+
+    /// Feature branch name.
+    pub branch_name: String,
+
+    /// PR title.
+    pub title: String,
+
+    /// Rendered PR body.
+    pub body: String,
+
+    /// Creation status.
+    pub status: PrStatus,
+}
 
 /// Creates an upgrade PR for template migrations.
 ///
 /// This function:
 /// 1. Clones the repository to a temp directory
-/// 2. Creates a branch (note: code generation is stubbed out)
-/// 3. Checks for changes and pushes if any exist
-/// 4. Creates a PR via GitHub API
+/// 2. Creates a branch
+/// 3. Runs serdes-ai LLM with coding tools to apply the migration
+/// 4. Checks for changes and pushes if any exist
+/// 5. Creates a PR via GitHub API
 ///
 /// # Arguments
 ///
@@ -27,6 +136,7 @@ use tracing::{debug, error, info, info_span, Instrument};
 /// * `migration` - Migration to apply
 /// * `renderer` - Template renderer
 /// * `token` - GitHub token for authentication
+/// * `llm_config_path` - Path to LLM config.toml
 ///
 /// # Returns
 ///
@@ -37,6 +147,7 @@ pub async fn create_pr(
     migration: &Migration,
     renderer: &TemplateRenderer,
     token: &str,
+    llm_config_path: &Path,
 ) -> Result<UpgradePR, PrError> {
     let span = info_span!(
         "create_pr",
@@ -61,13 +172,24 @@ pub async fn create_pr(
         // Create and checkout branch
         create_branch(temp_dir.path(), &branch_name).await?;
 
-        // Invoke stubbed code generation (no-op)
-        match invoke_opencode(temp_dir.path(), migration).await {
+        // Invoke serdes-ai with coding tools to apply migration
+        match invoke_serdes_ai(temp_dir.path(), llm_config_path, migration).await {
             Ok(()) => {
-                debug!("Code generation step completed (stubbed)");
+                debug!("LLM code generation completed");
+            }
+            Err(PrError::Timeout { .. }) => {
+                error!("LLM code generation timed out");
+                return Ok(UpgradePR {
+                    repository: repository.clone(),
+                    migration_id: migration.id.clone(),
+                    branch_name,
+                    title,
+                    body: String::new(),
+                    status: PrStatus::TimedOut,
+                });
             }
             Err(e) => {
-                error!(error = %e, "Code generation failed");
+                error!(error = %e, "LLM code generation failed");
                 return Ok(UpgradePR {
                     repository: repository.clone(),
                     migration_id: migration.id.clone(),
@@ -83,7 +205,7 @@ pub async fn create_pr(
 
         // Check if there are changes
         if !has_changes(temp_dir.path()).await? {
-            info!("No changes detected (code generation is stubbed)");
+            info!("No changes detected");
             return Ok(UpgradePR {
                 repository: repository.clone(),
                 migration_id: migration.id.clone(),
@@ -102,7 +224,7 @@ pub async fn create_pr(
         // Render PR body
         let body = renderer
             .render_pr_template(&migration.pr_template, migration)
-            .map_err(|e| PrError::OpenCodeFailed {
+            .map_err(|e| PrError::LlmFailed {
                 message: format!("Template error: {e}"),
             })?;
 
@@ -187,15 +309,20 @@ async fn create_branch(path: &Path, branch_name: &str) -> Result<(), PrError> {
     Ok(())
 }
 
-/// Stubbed function that previously invoked OpenCode to apply migration changes.
-///
-/// This function is now stubbed out and immediately returns Ok without making any changes.
-/// When called, it will result in no file modifications, which causes the PR creation
-/// process to skip PR generation with a "no changes made" status.
-#[allow(unused_variables)]
-async fn invoke_opencode(path: &Path, migration: &Migration) -> Result<(), PrError> {
-    debug!("OpenCode invocation stubbed - no changes will be made");
-    Ok(())
+/// Invokes serdes-ai with coding tools to apply the migration.
+async fn invoke_serdes_ai(
+    path: &Path,
+    config_path: &Path,
+    migration: &Migration,
+) -> Result<(), PrError> {
+    apply_migration(path, config_path, migration)
+        .await
+        .map_err(|e| match e {
+            crate::llm::LlmError::Timeout(secs) => PrError::Timeout { timeout_secs: secs },
+            _ => PrError::LlmFailed {
+                message: e.to_string(),
+            },
+        })
 }
 
 /// Checks if there are uncommitted changes.
@@ -329,6 +456,34 @@ mod tests {
         let migration = sample_migration();
         let branch = generate_branch_name(&migration);
         assert_eq!(branch, "template-upgrade/test/v1");
+    }
+
+    #[test]
+    fn test_pr_status_as_str() {
+        assert_eq!(PrStatus::Pending.as_str(), "pending");
+        assert_eq!(
+            PrStatus::Created {
+                number: 1,
+                url: "https://example.com".to_string()
+            }
+            .as_str(),
+            "created"
+        );
+        assert_eq!(
+            PrStatus::Skipped {
+                reason: "test".to_string()
+            }
+            .as_str(),
+            "skipped"
+        );
+        assert_eq!(
+            PrStatus::Failed {
+                error: "test".to_string()
+            }
+            .as_str(),
+            "failed"
+        );
+        assert_eq!(PrStatus::TimedOut.as_str(), "failed");
     }
 
     #[test]

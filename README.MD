@@ -29,7 +29,7 @@ For library usage, see the [template-upgrade-notifier crate documentation](./src
 
 Migrations are defined in folders containing:
 
-```
+```text
 migrations/
   my-migration/
     metadata.toml     # old_string, new_string, target_file

@@ -1,0 +1,4 @@
+old-string = "broken:1.0.1"
+new-string = "broken:1.0.2"
+migration-guide-link = "not-a-url"
+target-file = "template-version.txt"

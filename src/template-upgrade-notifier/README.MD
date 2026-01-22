@@ -16,7 +16,7 @@ A GitHub Action that scans repositories for outdated template versions and creat
 - Scan migrations from filesystem with `scan_migrations` and `load_migration`
 - Discover repositories via GitHub Code Search API with pagination and deduplication
 - Create upgrade notification issues with duplicate detection
-- Generate auto-fix PRs using OpenCode LLM integration
+- Generate auto-fix PRs using serdes-ai with coding tools
 - Render templates using Handlebars with conditional logic support
 - Built-in rate limit handling with proactive waiting
 - Comprehensive error types for each module
@@ -69,7 +69,41 @@ Handlebars template for the notification issue body.
 
 ### pr-template.md
 
-Handlebars template for the auto-fix PR body.
+Handlebars template for auto-fix PR body.
+
+### config.toml
+
+LLM configuration file for auto-PR generation:
+
+```toml
+[llm]
+# Provider to use: "open_ai", "open_router", "anthropic", or "gemini"
+provider = "open_ai"
+
+# Model name (provider-specific)
+model = "gpt-4o"
+
+# Optional: API key (falls back to provider env var if not set)
+# api_key = ""
+
+# Optional: Custom base URL
+# base-url = "https://api.openai.com/v1"
+
+# Optional: Timeout in seconds (default: 600)
+# timeout-secs = 600
+```
+
+Alternatively, configure via environment variables:
+
+| Variable                       | Description                              |
+| ------------------------------ | ---------------------------------------- |
+| `TEMPLATE_UPGRADE_LLM_MODEL` | LLM model spec for env-only configuration |
+| `OPENAI_API_KEY`             | OpenAI API key                           |
+| `OPENROUTER_API_KEY`          | OpenRouter API key                        |
+| `ANTHROPIC_API_KEY`          | Anthropic API key                         |
+| `GOOGLE_API_KEY`             | Google/Gemini API key                    |
+
+Use `--llm-config-path` to point at a non-default config location.
 
 ## Template Variables
 

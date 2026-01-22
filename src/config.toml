@@ -1,0 +1,27 @@
+# LLM Configuration for Template Upgrade Notifier
+#
+# This file configures the LLM provider and model for auto-PR generation.
+# If this file is not present, the TEMPLATE_UPGRADE_LLM_MODEL environment variable
+# must be set.
+#
+# API keys can be specified here or via environment variables:
+#   - OpenAI: OPENAI_API_KEY
+#   - OpenRouter: OPENROUTER_API_KEY
+#   - Anthropic: ANTHROPIC_API_KEY
+#   - Gemini: GOOGLE_API_KEY
+
+[llm]
+# Provider to use: "open_ai", "open_router", "anthropic", or "gemini"
+provider = "open_ai"
+
+# Model name (provider-specific)
+model = "gpt-4o"
+
+# Optional: API key (falls back to OPENAI_API_KEY env var if not set)
+# api_key = ""
+
+# Optional: Custom base URL for OpenAI-compatible APIs
+# base-url = "https://api.openai.com/v1"
+
+# Optional: Timeout in seconds (default: 600)
+# timeout-secs = 600

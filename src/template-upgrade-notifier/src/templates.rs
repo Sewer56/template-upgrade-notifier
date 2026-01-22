@@ -3,12 +3,12 @@
 //! This module provides functions to render issue and PR templates with
 //! variable substitution and conditional logic.
 
+use crate::config::Migration;
+use crate::pull_requests::PrStatus;
 use handlebars::{
     handlebars_helper, no_escape, Context, Handlebars, Helper, HelperResult, Output, RenderContext,
 };
 use serde_json::{json, Value};
-
-use crate::types::{Migration, PrStatus};
 
 /// Template rendering error.
 #[derive(Debug, thiserror::Error)]
