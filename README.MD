@@ -37,7 +37,7 @@ migrations/
     pr-template.md    # Handlebars template for PRs
 ```
 
-See the [library documentation](./src/template-upgrade-notifier/README.MD) for full configuration details.
+See the [examples folder](./examples) for a ready-to-use starting point, or the [library documentation](./src/template-upgrade-notifier/README.MD) for full configuration details.
 
 ## Crates
 

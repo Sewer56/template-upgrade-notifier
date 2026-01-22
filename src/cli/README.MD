@@ -4,12 +4,9 @@
 [![Docs.rs](https://docs.rs/template-upgrade-notifier-cli/badge.svg)](https://docs.rs/template-upgrade-notifier-cli)
 [![CI](https://github.com/Sewer56/template-upgrade-notifier/actions/workflows/rust.yml/badge.svg)](https://github.com/Sewer56/template-upgrade-notifier/actions)
 
-Command-line interface for [template-upgrade-notifier](../template-upgrade-notifier/README.MD).
+Command-line interface for [template-upgrade-notifier](https://github.com/Sewer56/template-upgrade-notifier).
 
-<!-- 
-    This README is displayed on crates.io & docs.rs
-    Write detailed documentation here for users.
--->
+For full documentation, migration setup guides, and project overview, see the [main project README](https://github.com/Sewer56/template-upgrade-notifier#readme).
 
 ## Installation
 
@@ -22,6 +19,35 @@ Or build from source:
 ```bash
 cargo build --release -p template-upgrade-notifier-cli
 ```
+
+## Getting Started
+
+Before running, you need:
+
+1. **A GitHub Personal Access Token** with `repo` scope (pass via `--token` or `GITHUB_TOKEN` env var)
+2. **A migrations folder** containing your upgrade definitions
+
+### Migration Folder Structure
+
+```text
+migrations/
+  my-template/
+    v1.0.0-to-v1.1.0/
+      metadata.toml      # Defines old/new version strings
+      issue-template.md  # Handlebars template for issues
+      pr-template.md     # Handlebars template for PRs (optional)
+```
+
+### Minimal metadata.toml
+
+```toml
+old-string = "my-template:1.0.0"
+new-string = "my-template:1.0.1"
+```
+
+For complete migration configuration options (custom titles, branch names, migration guide links), see the [library documentation](https://github.com/Sewer56/template-upgrade-notifier/blob/main/src/template-upgrade-notifier/README.MD#migration-folder-structure).
+
+For a ready-to-use starting point, copy the [examples folder](https://github.com/Sewer56/template-upgrade-notifier/tree/main/examples).
 
 ## Usage
 
@@ -53,6 +79,19 @@ template-upgrade-notifier-cli --help
 | `OPENROUTER_API_KEY`          | OpenRouter API key                      |
 | `ANTHROPIC_API_KEY`          | Anthropic API key                       |
 | `GOOGLE_API_KEY`             | Google/Gemini API key                   |
+
+## LLM Configuration (for Auto-PR)
+
+When using `--auto-pr`, the CLI uses an LLM to generate fix PRs. Configure via `--llm-config-path`:
+
+```toml
+[llm]
+provider = "openai"  # "openai", "openrouter", "anthropic", or "gemini"
+model = "gpt-4o"
+# api_key = ""       # Optional: falls back to provider env var
+```
+
+Or set `TEMPLATE_UPGRADE_LLM_MODEL` environment variable for simple cases.
 
 ## Examples
 
