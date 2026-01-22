@@ -107,10 +107,7 @@ async fn execute_code_search(
     all_results.extend(extract_search_results(&page));
 
     // Paginate through remaining results
-    while let Some(next_page) = octocrab
-        .get_page::<octocrab::models::Code>(&page.next)
-        .await?
-    {
+    loop {
         if all_results.len() >= MAX_SEARCH_RESULTS {
             warn!(
                 max = MAX_SEARCH_RESULTS,
@@ -119,15 +116,22 @@ async fn execute_code_search(
             break;
         }
 
-        // Check rate limit before next page
-        ensure_search_rate_limit(octocrab).await?;
-
-        all_results.extend(extract_page_results(&next_page));
-        page.next = next_page.next;
-
         if page.next.is_none() {
             break;
         }
+
+        // Check rate limit before making the API call
+        ensure_search_rate_limit(octocrab).await?;
+
+        let Some(next_page) = octocrab
+            .get_page::<octocrab::models::Code>(&page.next)
+            .await?
+        else {
+            break;
+        };
+
+        all_results.extend(extract_page_results(&next_page));
+        page.next = next_page.next;
     }
 
     Ok(all_results)
