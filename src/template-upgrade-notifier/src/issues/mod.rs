@@ -14,7 +14,7 @@ pub use upgrade_issue::UpgradeIssue;
 use crate::config::Migration;
 use crate::discovery::DiscoveredRepository;
 use crate::pull_requests::PrStatus;
-use crate::rate_limit::ensure_core_rate_limit;
+use crate::rate_limit::{ensure_core_rate_limit, ensure_search_rate_limit};
 use crate::templates::generate_issue_title;
 use crate::templates::TemplateRenderer;
 use octocrab::Octocrab;
@@ -84,9 +84,6 @@ pub async fn create_issue(
             .map_err(|e: crate::templates::TemplateError| {
                 IssueError::TemplateError(e.to_string())
             })?;
-
-        // Ensure rate limit
-        ensure_core_rate_limit(octocrab).await?;
 
         // Create issue
         match create_github_issue(octocrab, repository, &title, &body).await {
@@ -204,6 +201,9 @@ async fn check_duplicate_issue(
         repository.full_name, title
     );
 
+    // Check rate limit before search API call
+    ensure_search_rate_limit(octocrab).await?;
+
     let results = octocrab
         .search()
         .issues_and_pull_requests(&query)
@@ -227,6 +227,7 @@ async fn create_github_issue(
     title: &str,
     body: &str,
 ) -> Result<(u64, String), IssueError> {
+    ensure_core_rate_limit(octocrab).await?;
     let issue = octocrab
         .issues(&repository.owner, &repository.name)
         .create(title)

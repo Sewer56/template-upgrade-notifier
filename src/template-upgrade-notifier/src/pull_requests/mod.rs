@@ -132,9 +132,6 @@ pub async fn create_pr(
                 message: format!("Template error: {e}"),
             })?;
 
-        // Ensure rate limit
-        ensure_core_rate_limit(octocrab).await?;
-
         // Create PR
         let (number, url) =
             create_github_pr(octocrab, repository, &branch_name, &title, &body).await?;
@@ -323,6 +320,7 @@ async fn create_github_pr(
     title: &str,
     body: &str,
 ) -> Result<(u64, String), PrError> {
+    ensure_core_rate_limit(octocrab).await?;
     let pr = octocrab
         .pulls(&repository.owner, &repository.name)
         .create(title, branch_name, &repository.default_branch)

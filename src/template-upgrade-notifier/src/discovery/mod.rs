@@ -10,7 +10,7 @@ pub use error::DiscoveryError;
 pub use repository::DiscoveredRepository;
 
 use crate::config::Migration;
-use crate::rate_limit::ensure_search_rate_limit;
+use crate::rate_limit::{ensure_core_rate_limit, ensure_search_rate_limit};
 use octocrab::Octocrab;
 use std::collections::HashSet;
 use tracing::{debug, info, info_span, warn, Instrument};
@@ -61,9 +61,6 @@ pub async fn discover_repositories(
     async {
         info!("Starting repository discovery");
 
-        // Ensure we have rate limit capacity
-        ensure_search_rate_limit(octocrab).await?;
-
         // Build search query
         let query = build_search_query(&migration.old_string, &migration.target_file);
         debug!(query = %query, "Executing code search");
@@ -94,6 +91,9 @@ async fn execute_code_search(
     query: &str,
 ) -> Result<Vec<CodeSearchResult>, DiscoveryError> {
     let mut all_results = Vec::new();
+
+    // Check rate limit before first search
+    ensure_search_rate_limit(octocrab).await?;
 
     // Get first page
     let mut page = octocrab
@@ -207,6 +207,7 @@ pub async fn get_default_branch(
     owner: &str,
     repo: &str,
 ) -> Result<String, DiscoveryError> {
+    ensure_core_rate_limit(octocrab).await?;
     let repo_info = octocrab.repos(owner, repo).get().await?;
     Ok(repo_info
         .default_branch
