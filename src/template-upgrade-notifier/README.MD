@@ -67,9 +67,28 @@ target-file = "template-version.txt"  # Optional, defaults to "template-version.
 
 Handlebars template for the notification issue body.
 
+Simple example:
+```handlebars
+Upgrade Available: {{old_string}} → {{new_string}}
+
+See the migration guide: {{migration_guide_link}}
+
+{{#if (eq pr_status "created")}}
+An automated fix PR has been created: {{pr_link}}
+{{/if}}
+```
+
 ### pr-template.md
 
 Handlebars template for auto-fix PR body.
+
+Simple example:
+```handlebars
+Upgrade to {{new_string}}
+
+This PR applies the migration changes automatically.
+See the migration guide: {{migration_guide_link}}
+```
 
 ### config.toml
 
