@@ -1,0 +1,24 @@
+# Migration Metadata
+#
+# This file defines what version string to search for and what to upgrade it to.
+
+# Version string currently in repositories (required)
+old-string = "reloaded-templates-rust:1.0.1"
+
+# Version string to upgrade to (required)
+new-string = "reloaded-templates-rust:1.1.0"
+
+# Link to migration guide (optional)
+# Included in issue/PR templates via {{migration_guide_link}}
+migration-guide-link = "https://reloaded-project.github.io/reloaded-templates-rust/migration/v1.1.0/"
+
+# File containing the version string (optional, default: "template-version.txt")
+target-file = ".github/template-version.txt"
+
+# Title format customization (all optional)
+# Available variables: {{old_string}}, {{new_string}}, {{id}}, {{target_file}}, {{migration_guide_link}}
+
+# issue-title-format = "Template Upgrade Available: {{old_string}} -> {{new_string}}"
+# pr-title-format = "Template Upgrade: {{old_string}} -> {{new_string}}"
+# branch-name-format = "template-upgrade/{{id}}"
+# commit-title-format = "chore: upgrade {{old_string}} -> {{new_string}}"
