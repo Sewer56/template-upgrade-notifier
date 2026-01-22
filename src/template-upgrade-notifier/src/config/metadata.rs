@@ -158,6 +158,13 @@ impl MigrationMetadata {
         field_name: &str,
         template: &str,
     ) -> Result<(), ConfigError> {
+        if template.trim().is_empty() {
+            return Err(ConfigError::ValidationError {
+                path: path.to_string(),
+                message: format!("{field_name} cannot be empty"),
+            });
+        }
+
         let hbs = Handlebars::new();
         hbs.render_template(template, &serde_json::json!({}))
             .map_err(|e| ConfigError::ValidationError {
