@@ -77,19 +77,31 @@ impl LlmConfig {
                 http_referer,
                 app_title,
             } => {
-                if api_key.is_none() && http_referer.is_none() && app_title.is_none() {
+                // Env vars take precedence over config values
+                let resolved_key = std::env::var("OPENROUTER_API_KEY")
+                    .ok()
+                    .or_else(|| api_key.clone());
+                let resolved_referer = std::env::var("OPENROUTER_HTTP_REFERER")
+                    .ok()
+                    .or_else(|| http_referer.clone());
+                let resolved_title = std::env::var("OPENROUTER_APP_TITLE")
+                    .ok()
+                    .or_else(|| app_title.clone());
+
+                if resolved_key.is_none() && resolved_referer.is_none() && resolved_title.is_none()
+                {
                     let spec = format!("openrouter:{model}");
                     return infer_model(&spec).map_err(LlmError::Model);
                 }
-                let mut model = match api_key {
-                    Some(key) => OpenRouterModel::new(model, key),
+                let mut model = match resolved_key {
+                    Some(key) => OpenRouterModel::new(model, &key),
                     None => OpenRouterModel::from_env(model).map_err(LlmError::Model)?,
                 };
-                if let Some(referer) = http_referer {
-                    model = model.with_http_referer(referer);
+                if let Some(referer) = resolved_referer {
+                    model = model.with_http_referer(&referer);
                 }
-                if let Some(title) = app_title {
-                    model = model.with_app_title(title);
+                if let Some(title) = resolved_title {
+                    model = model.with_app_title(&title);
                 }
                 Ok(Arc::new(model))
             }
@@ -123,12 +135,13 @@ fn build_configured_model(
     base_url: &Option<String>,
     timeout_secs: &Option<u64>,
 ) -> Result<Arc<dyn Model>, LlmError> {
-    let resolved_key = api_key
-        .as_deref()
-        .map(str::to_owned)
-        .or_else(|| env_api_key(provider));
-    let timeout = timeout_secs.map(core::time::Duration::from_secs);
-    if resolved_key.is_none() && base_url.is_none() && timeout_secs.is_none() {
+    // Env vars take precedence over config values
+    let resolved_key = env_api_key(provider).or_else(|| api_key.as_deref().map(str::to_owned));
+    let resolved_base_url = env_base_url(provider).or_else(|| base_url.clone());
+    let resolved_timeout_secs = env_timeout_secs(provider).or(*timeout_secs);
+    let timeout = resolved_timeout_secs.map(core::time::Duration::from_secs);
+
+    if resolved_key.is_none() && resolved_base_url.is_none() && resolved_timeout_secs.is_none() {
         let spec = format!("{provider}:{model}");
         return infer_model(&spec).map_err(LlmError::Model);
     }
@@ -136,7 +149,7 @@ fn build_configured_model(
         provider,
         model,
         resolved_key.as_deref(),
-        base_url.as_deref(),
+        resolved_base_url.as_deref(),
         timeout,
     )
     .map_err(LlmError::Model)
@@ -151,4 +164,26 @@ fn env_api_key(provider: &str) -> Option<String> {
         _ => return None,
     };
     std::env::var(var).ok()
+}
+
+/// Gets the base URL from environment variables for a provider.
+fn env_base_url(provider: &str) -> Option<String> {
+    let var = match provider {
+        "openai" => "OPENAI_BASE_URL",
+        "anthropic" => "ANTHROPIC_BASE_URL",
+        "gemini" => "GEMINI_BASE_URL",
+        _ => return None,
+    };
+    std::env::var(var).ok()
+}
+
+/// Gets the timeout from environment variables for a provider.
+fn env_timeout_secs(provider: &str) -> Option<u64> {
+    let var = match provider {
+        "openai" => "OPENAI_TIMEOUT_SECS",
+        "anthropic" => "ANTHROPIC_TIMEOUT_SECS",
+        "gemini" => "GEMINI_TIMEOUT_SECS",
+        _ => return None,
+    };
+    std::env::var(var).ok()?.parse().ok()
 }

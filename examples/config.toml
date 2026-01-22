@@ -3,6 +3,8 @@
 # Use with: template-upgrade-notifier-cli --auto-pr --llm-config-path ./config.toml
 #
 # Alternatively, set TEMPLATE_UPGRADE_LLM_MODEL environment variable for simple cases.
+#
+# PRECEDENCE: Environment variables > Config file values > Defaults
 
 [llm]
 # Provider to use (required)
@@ -18,7 +20,7 @@ provider = "openai"
 model = "gpt-4o"
 
 # API key (optional)
-# If not set, falls back to provider environment variable:
+# Environment variables (override config):
 #   - OPENAI_API_KEY
 #   - ANTHROPIC_API_KEY
 #   - OPENROUTER_API_KEY
@@ -27,7 +29,24 @@ model = "gpt-4o"
 
 # Custom base URL (optional)
 # Useful for proxies or self-hosted endpoints
+# Environment variables (override config):
+#   - OPENAI_BASE_URL
+#   - ANTHROPIC_BASE_URL
+#   - GEMINI_BASE_URL
 # base-url = "https://api.openai.com/v1"
 
 # Request timeout in seconds (optional, default: 600)
+# Environment variables (override config):
+#   - OPENAI_TIMEOUT_SECS
+#   - ANTHROPIC_TIMEOUT_SECS
+#   - GEMINI_TIMEOUT_SECS
 # timeout-secs = 600
+
+# OpenRouter-specific settings (optional)
+# HTTP Referer header for OpenRouter API
+# Environment variable (overrides config): OPENROUTER_HTTP_REFERER
+# http-referer = "https://your-app.example.com"
+
+# Application title for OpenRouter API
+# Environment variable (overrides config): OPENROUTER_APP_TITLE
+# app-title = "Your Application Name"
