@@ -25,4 +25,4 @@ A GitHub Action that scans repositories for outdated template versions and creat
 
 # Post-Change Verification
 
-Always run `.cargo/verify.sh` (or `.cargo/verify.ps1` on Windows) from the workspace root after changing code.
+Always run `.cargo/verify.sh` (or `.cargo/verify.ps1` on Windows) after changing code.
