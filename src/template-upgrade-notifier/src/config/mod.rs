@@ -83,11 +83,12 @@ fn scan_directory_recursive(
             let metadata_path = path.join("metadata.toml");
             if metadata_path.exists() {
                 // This is a migration directory
+                // Normalize path separators to forward slashes for cross-platform consistency
                 let migration_id = path
                     .strip_prefix(base_path)
                     .unwrap_or(&path)
                     .to_string_lossy()
-                    .to_string();
+                    .replace('\\', "/");
 
                 match Migration::load(&path, &migration_id) {
                     Ok(migration) => {
