@@ -1,7 +1,4 @@
-//! Template rendering using Handlebars.
-//!
-//! This module provides functions to render issue and PR templates with
-//! variable substitution and conditional logic.
+//! Template renderer.
 
 use crate::config::Migration;
 use crate::pull_requests::PrStatus;
@@ -9,18 +6,6 @@ use handlebars::{
     handlebars_helper, no_escape, Context, Handlebars, Helper, HelperResult, Output, RenderContext,
 };
 use serde_json::{json, Value};
-
-/// Template rendering error.
-#[derive(Debug, thiserror::Error)]
-pub enum TemplateError {
-    /// Handlebars rendering error.
-    #[error("Template rendering error: {0}")]
-    RenderError(#[from] handlebars::RenderError),
-
-    /// Template registration error.
-    #[error("Template registration error: {0}")]
-    RegistrationError(#[from] handlebars::TemplateError),
-}
 
 /// Creates a configured Handlebars registry with custom helpers.
 ///
@@ -107,7 +92,7 @@ impl TemplateRenderer {
         migration: &Migration,
         pr_status: Option<&PrStatus>,
         pr_link: Option<&str>,
-    ) -> Result<String, TemplateError> {
+    ) -> Result<String, super::TemplateError> {
         let data = json!({
             "old_string": migration.old_string,
             "new_string": migration.new_string,
@@ -134,7 +119,7 @@ impl TemplateRenderer {
         &self,
         template: &str,
         migration: &Migration,
-    ) -> Result<String, TemplateError> {
+    ) -> Result<String, super::TemplateError> {
         let data = json!({
             "old_string": migration.old_string,
             "new_string": migration.new_string,
@@ -146,39 +131,13 @@ impl TemplateRenderer {
     }
 
     /// Renders a template with the given data.
-    fn render_template(&self, template: &str, data: &Value) -> Result<String, TemplateError> {
+    fn render_template(
+        &self,
+        template: &str,
+        data: &Value,
+    ) -> Result<String, super::TemplateError> {
         Ok(self.handlebars.render_template(template, data)?)
     }
-}
-
-/// Generates the issue title for an upgrade notification.
-///
-/// Format: "Template Upgrade Available: {old_string} -> {new_string}"
-#[must_use]
-pub fn generate_issue_title(migration: &Migration) -> String {
-    format!(
-        "Template Upgrade Available: {} -> {}",
-        migration.old_string, migration.new_string
-    )
-}
-
-/// Generates the PR title for an upgrade.
-///
-/// Format: "Template Upgrade: {old_string} -> {new_string}"
-#[must_use]
-pub fn generate_pr_title(migration: &Migration) -> String {
-    format!(
-        "Template Upgrade: {} -> {}",
-        migration.old_string, migration.new_string
-    )
-}
-
-/// Generates the branch name for an upgrade PR.
-///
-/// Format: "template-upgrade/{migration_id}"
-#[must_use]
-pub fn generate_branch_name(migration: &Migration) -> String {
-    format!("template-upgrade/{}", migration.id)
 }
 
 #[cfg(test)]
@@ -195,33 +154,6 @@ mod tests {
             issue_template: String::new(),
             pr_template: String::new(),
         }
-    }
-
-    #[test]
-    fn test_generate_issue_title() {
-        let migration = sample_migration();
-        let title = generate_issue_title(&migration);
-        assert_eq!(
-            title,
-            "Template Upgrade Available: my-template:1.0.0 -> my-template:1.0.1"
-        );
-    }
-
-    #[test]
-    fn test_generate_pr_title() {
-        let migration = sample_migration();
-        let title = generate_pr_title(&migration);
-        assert_eq!(
-            title,
-            "Template Upgrade: my-template:1.0.0 -> my-template:1.0.1"
-        );
-    }
-
-    #[test]
-    fn test_generate_branch_name() {
-        let migration = sample_migration();
-        let branch = generate_branch_name(&migration);
-        assert_eq!(branch, "template-upgrade/my-template/v1.0.0-to-v1.0.1");
     }
 
     #[test]
@@ -244,7 +176,7 @@ mod tests {
         let migration = sample_migration();
 
         let template = r#"Status: {{pr_status}}
-{{#if pr_link}}PR: {{pr_link}}{{/if}}"#;
+ {{#if pr_link}}PR: {{pr_link}}{{/if}}"#;
 
         let result = renderer
             .render_issue_template(

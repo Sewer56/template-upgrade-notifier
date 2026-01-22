@@ -1,6 +1,12 @@
 //! Orchestrates template upgrade scans and notifications.
 
-use crate::config::{scan_migrations, ConfigError, Migration};
+mod config;
+mod error;
+
+pub use config::RunnerConfig;
+pub use error::RunnerError;
+
+use crate::config::{scan_migrations, Migration};
 use crate::discovery::discover_repositories;
 use crate::issues::{create_issue, update_issue_with_pr, IssueStatus};
 use crate::pull_requests::{create_pr, PrStatus};
@@ -8,96 +14,8 @@ use crate::summary::{ProcessingResult, RunSummary};
 use crate::templates::TemplateRenderer;
 use futures::stream::{self, StreamExt};
 use octocrab::Octocrab;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tracing::{error, info, warn};
-
-/// Configuration for running the template upgrade notifier.
-#[derive(Debug, Clone)]
-pub struct RunnerConfig {
-    /// Path to the migrations directory.
-    migrations_path: PathBuf,
-    /// GitHub token used for API calls and PR pushes.
-    token: String,
-    /// Whether to preview changes without creating issues/PRs.
-    dry_run: bool,
-    /// Maximum concurrent API requests.
-    concurrency: usize,
-    /// Whether auto-PR generation is enabled.
-    auto_pr: bool,
-    /// Path to the LLM config file.
-    llm_config_path: PathBuf,
-}
-
-impl RunnerConfig {
-    /// Creates a new configuration for a run.
-    pub fn new(
-        migrations_path: PathBuf,
-        token: String,
-        dry_run: bool,
-        concurrency: usize,
-        auto_pr: bool,
-    ) -> Self {
-        let llm_config_path = migrations_path
-            .parent()
-            .unwrap_or_else(|| Path::new("."))
-            .join("config.toml");
-        Self {
-            migrations_path,
-            token,
-            dry_run,
-            concurrency,
-            auto_pr,
-            llm_config_path,
-        }
-    }
-
-    /// Sets a custom LLM config path.
-    pub fn with_llm_config_path(mut self, llm_config_path: PathBuf) -> Self {
-        self.llm_config_path = llm_config_path;
-        self
-    }
-
-    /// Returns the migrations directory path.
-    pub fn migrations_path(&self) -> &Path {
-        &self.migrations_path
-    }
-
-    /// Returns the configured GitHub token.
-    pub fn token(&self) -> &str {
-        &self.token
-    }
-
-    /// Returns whether dry-run mode is enabled.
-    pub fn dry_run(&self) -> bool {
-        self.dry_run
-    }
-
-    /// Returns the max concurrent API requests.
-    pub fn concurrency(&self) -> usize {
-        self.concurrency
-    }
-
-    /// Returns whether auto-PR generation is enabled.
-    pub fn auto_pr(&self) -> bool {
-        self.auto_pr
-    }
-
-    /// Returns the LLM config file path.
-    pub fn llm_config_path(&self) -> &Path {
-        &self.llm_config_path
-    }
-}
-
-/// Errors that can occur while running the notifier.
-#[derive(Debug, thiserror::Error)]
-pub enum RunnerError {
-    /// Configuration and migration loading errors.
-    #[error(transparent)]
-    Config(#[from] ConfigError),
-    /// GitHub API client initialization errors.
-    #[error(transparent)]
-    Octocrab(#[from] octocrab::Error),
-}
 
 /// Orchestrates a full template upgrade scan and notification run.
 pub struct Runner {
@@ -110,7 +28,7 @@ impl Runner {
     /// Builds a runner from the provided configuration.
     pub fn new(config: RunnerConfig) -> Result<Self, RunnerError> {
         let octocrab = Octocrab::builder()
-            .personal_token(config.token.clone())
+            .personal_token(config.token().to_string())
             .build()?;
         Ok(Self {
             config,
@@ -121,9 +39,9 @@ impl Runner {
 
     /// Executes the full orchestration flow.
     pub async fn run(&self) -> Result<RunSummary, RunnerError> {
-        let mut summary = RunSummary::new(self.config.dry_run);
-        info!(path = %self.config.migrations_path.display(), "Loading migrations");
-        let migrations = scan_migrations(&self.config.migrations_path)?;
+        let mut summary = RunSummary::new(self.config.dry_run());
+        info!(path = %self.config.migrations_path().display(), "Loading migrations");
+        let migrations = scan_migrations(self.config.migrations_path())?;
 
         if migrations.is_empty() {
             warn!("No migrations found");
@@ -186,7 +104,7 @@ async fn process_migration(
     );
     summary.repositories_discovered += repositories.len();
 
-    if config.dry_run {
+    if config.dry_run() {
         print_dry_run_preview(migration, &repositories, renderer);
         return Ok(());
     }
@@ -197,8 +115,8 @@ async fn process_migration(
             let octocrab = octocrab.clone();
             let migration = migration.clone();
             let renderer_ref = renderer;
-            let token = config.token.clone();
-            let auto_pr = config.auto_pr;
+            let token = config.token().to_string();
+            let auto_pr = config.auto_pr();
             let llm_config_path = llm_config_path.clone();
 
             async move {
@@ -214,7 +132,7 @@ async fn process_migration(
                 .await
             }
         })
-        .buffer_unordered(config.concurrency)
+        .buffer_unordered(config.concurrency())
         .collect()
         .await;
 

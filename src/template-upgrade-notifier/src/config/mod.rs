@@ -3,88 +3,16 @@
 //! This module handles parsing metadata.toml files and loading migrations
 //! from the filesystem.
 
-use serde::Deserialize;
+mod error;
+mod metadata;
+mod migration;
+
+pub use error::ConfigError;
+pub use metadata::MigrationMetadata;
+pub use migration::Migration;
+
 use std::path::Path;
-use thiserror::Error;
 use tracing::{debug, info, warn};
-use url::Url;
-
-/// Errors that can occur during configuration parsing.
-#[derive(Debug, Error)]
-pub enum ConfigError {
-    /// Failed to read a file.
-    #[error("Failed to read file '{path}': {source}")]
-    IoError {
-        path: String,
-        #[source]
-        source: std::io::Error,
-    },
-
-    /// Failed to parse TOML content.
-    #[error("Failed to parse metadata.toml in '{path}': {source}")]
-    TomlError {
-        path: String,
-        #[source]
-        source: toml::de::Error,
-    },
-
-    /// Validation error in metadata.
-    #[error("Validation error in '{path}': {message}")]
-    ValidationError { path: String, message: String },
-
-    /// Missing required file.
-    #[error("Missing required file: {path}")]
-    MissingFile { path: String },
-}
-
-/// Parsed metadata from a `metadata.toml` file.
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct MigrationMetadata {
-    /// The version string to search for in repositories.
-    pub old_string: String,
-
-    /// The version string to upgrade to.
-    pub new_string: String,
-
-    /// URL to migration documentation.
-    pub migration_guide_link: String,
-
-    /// File name to search for (defaults to "template-version.txt").
-    #[serde(default = "default_target_file")]
-    pub target_file: String,
-}
-
-fn default_target_file() -> String {
-    "template-version.txt".to_string()
-}
-
-/// A complete migration definition loaded from a migrations folder.
-///
-/// Combines [`MigrationMetadata`] with template contents and a derived ID.
-#[derive(Debug, Clone)]
-pub struct Migration {
-    /// Unique identifier derived from folder path (e.g., "my-template/v1.0.0-to-v1.0.1").
-    pub id: String,
-
-    /// The version string to search for.
-    pub old_string: String,
-
-    /// The version string to upgrade to.
-    pub new_string: String,
-
-    /// URL to migration documentation.
-    pub migration_guide_link: String,
-
-    /// File name to search for containing the version string.
-    pub target_file: String,
-
-    /// Contents of issue-template.md.
-    pub issue_template: String,
-
-    /// Contents of pr-template.md.
-    pub pr_template: String,
-}
 
 /// Loads a single migration from a directory.
 ///
@@ -191,7 +119,7 @@ fn validate_metadata(metadata: &MigrationMetadata, path: &Path) -> Result<(), Co
     }
 
     // Validate URL format
-    if Url::parse(&metadata.migration_guide_link).is_err() {
+    if url::Url::parse(&metadata.migration_guide_link).is_err() {
         return Err(ConfigError::ValidationError {
             path: path_str,
             message: format!(
@@ -410,6 +338,9 @@ migration-guide-link = "not-a-url"
 
     #[test]
     fn test_default_target_file() {
-        assert_eq!(default_target_file(), "template-version.txt");
+        assert_eq!(
+            crate::config::metadata::default_target_file(),
+            "template-version.txt"
+        );
     }
 }

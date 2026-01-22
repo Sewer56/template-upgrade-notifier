@@ -3,6 +3,10 @@
 //! This module provides functions to check and wait for GitHub API rate limits,
 //! respecting the Retry-After header and implementing exponential backoff.
 
+mod info;
+
+pub use info::RateLimitInfo;
+
 use octocrab::Octocrab;
 use std::time::Duration;
 use tracing::{info, warn};
@@ -12,17 +16,6 @@ const MAX_WAIT_SECS: u64 = 3600;
 
 /// Minimum remaining requests before proactively waiting.
 const MIN_REMAINING_THRESHOLD: u32 = 5;
-
-/// Rate limit information for a specific resource.
-#[derive(Debug, Clone)]
-pub struct RateLimitInfo {
-    /// Requests remaining in the current window.
-    pub remaining: u32,
-    /// Unix timestamp when the rate limit resets.
-    pub reset: u64,
-    /// Total requests allowed per window.
-    pub limit: u32,
-}
 
 /// Checks the current rate limit status for search API.
 ///
@@ -145,19 +138,6 @@ pub async fn ensure_core_rate_limit(octocrab: &Octocrab) -> Result<(), octocrab:
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_rate_limit_info() {
-        let info = RateLimitInfo {
-            remaining: 10,
-            reset: 1234567890,
-            limit: 30,
-        };
-
-        assert_eq!(info.remaining, 10);
-        assert_eq!(info.reset, 1234567890);
-        assert_eq!(info.limit, 30);
-    }
 
     #[tokio::test]
     async fn test_wait_if_needed_no_wait() {

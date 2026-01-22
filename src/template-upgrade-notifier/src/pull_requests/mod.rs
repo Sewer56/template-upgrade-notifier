@@ -3,122 +3,26 @@
 //! This module handles creating upgrade PRs with LLM-powered code generation
 //! using serdes-ai and coding tools.
 
+mod error;
+mod status;
+mod upgrade_pr;
+
+pub use error::PrError;
+pub use status::PrStatus;
+pub use upgrade_pr::UpgradePR;
+
 use crate::config::Migration;
 use crate::discovery::DiscoveredRepository;
 use crate::llm::apply_migration;
 use crate::rate_limit::ensure_core_rate_limit;
-use crate::templates::{generate_branch_name, generate_pr_title, TemplateRenderer};
+use crate::templates::generate_branch_name;
+use crate::templates::generate_pr_title;
+use crate::templates::TemplateRenderer;
 use octocrab::Octocrab;
-use serde::Serialize;
 use std::path::Path;
 use std::process::Stdio;
-use thiserror::Error;
 use tokio::process::Command;
 use tracing::{debug, error, info, info_span, Instrument};
-
-/// Errors that can occur during PR operations.
-#[derive(Debug, Error)]
-pub enum PrError {
-    /// GitHub API error.
-    #[error("GitHub API error: {0}")]
-    GitHubError(#[from] octocrab::Error),
-
-    /// Clone failed.
-    #[error("Failed to clone repository: {message}")]
-    CloneFailed { message: String },
-
-    /// LLM invocation failed.
-    #[error("LLM invocation failed: {message}")]
-    LlmFailed { message: String },
-
-    /// LLM timed out.
-    #[error("LLM timed out after {timeout_secs} seconds")]
-    Timeout { timeout_secs: u64 },
-
-    /// Push failed.
-    #[error("Failed to push changes: {message}")]
-    PushFailed { message: String },
-
-    /// No changes were made.
-    #[error("No changes were made")]
-    NoChanges,
-}
-
-/// Status of a PR creation operation.
-#[derive(Debug, Clone, Serialize)]
-#[serde(tag = "status", rename_all = "snake_case")]
-pub enum PrStatus {
-    /// PR not yet created.
-    Pending,
-
-    /// PR successfully created.
-    Created {
-        /// GitHub PR number.
-        number: u64,
-        /// GitHub PR URL.
-        url: String,
-    },
-
-    /// PR creation skipped.
-    Skipped {
-        /// Reason for skipping.
-        reason: String,
-    },
-
-    /// PR creation failed.
-    Failed {
-        /// Error message.
-        error: String,
-    },
-
-    /// Timed out during PR generation.
-    TimedOut,
-}
-
-impl PrStatus {
-    /// Returns the status as a string for template rendering.
-    #[must_use]
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Pending => "pending",
-            Self::Created { .. } => "created",
-            Self::Skipped { .. } => "skipped",
-            Self::Failed { .. } => "failed",
-            Self::TimedOut => "failed",
-        }
-    }
-
-    /// Returns the PR URL if created.
-    #[must_use]
-    pub fn url(&self) -> Option<&str> {
-        match self {
-            Self::Created { url, .. } => Some(url),
-            _ => None,
-        }
-    }
-}
-
-/// A pull request created to apply a migration.
-#[derive(Debug, Clone)]
-pub struct UpgradePR {
-    /// Target repository.
-    pub repository: DiscoveredRepository,
-
-    /// Reference to source migration.
-    pub migration_id: String,
-
-    /// Feature branch name.
-    pub branch_name: String,
-
-    /// PR title.
-    pub title: String,
-
-    /// Rendered PR body.
-    pub body: String,
-
-    /// Creation status.
-    pub status: PrStatus,
-}
 
 /// Creates an upgrade PR for template migrations.
 ///
@@ -456,34 +360,6 @@ mod tests {
         let migration = sample_migration();
         let branch = generate_branch_name(&migration);
         assert_eq!(branch, "template-upgrade/test/v1");
-    }
-
-    #[test]
-    fn test_pr_status_as_str() {
-        assert_eq!(PrStatus::Pending.as_str(), "pending");
-        assert_eq!(
-            PrStatus::Created {
-                number: 1,
-                url: "https://example.com".to_string()
-            }
-            .as_str(),
-            "created"
-        );
-        assert_eq!(
-            PrStatus::Skipped {
-                reason: "test".to_string()
-            }
-            .as_str(),
-            "skipped"
-        );
-        assert_eq!(
-            PrStatus::Failed {
-                error: "test".to_string()
-            }
-            .as_str(),
-            "failed"
-        );
-        assert_eq!(PrStatus::TimedOut.as_str(), "failed");
     }
 
     #[test]

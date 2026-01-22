@@ -3,82 +3,22 @@
 //! This module handles creating upgrade notification issues in discovered
 //! repositories, including duplicate detection and permission handling.
 
+mod error;
+mod status;
+mod upgrade_issue;
+
+pub use error::IssueError;
+pub use status::IssueStatus;
+pub use upgrade_issue::UpgradeIssue;
+
 use crate::config::Migration;
 use crate::discovery::DiscoveredRepository;
 use crate::pull_requests::PrStatus;
 use crate::rate_limit::ensure_core_rate_limit;
-use crate::templates::{generate_issue_title, TemplateRenderer};
+use crate::templates::generate_issue_title;
+use crate::templates::TemplateRenderer;
 use octocrab::Octocrab;
-use serde::Serialize;
-use thiserror::Error;
 use tracing::{debug, info, info_span, warn, Instrument};
-
-/// Errors that can occur during issue operations.
-#[derive(Debug, Error)]
-pub enum IssueError {
-    /// GitHub API error.
-    #[error("GitHub API error: {0}")]
-    GitHubError(#[from] octocrab::Error),
-
-    /// Permission denied.
-    #[error("Permission denied: no write access to {owner}/{repo}")]
-    PermissionDenied { owner: String, repo: String },
-
-    /// Rate limit exceeded.
-    #[error("Rate limit exceeded, reset at {reset_at}")]
-    RateLimitExceeded { reset_at: u64 },
-
-    /// Template rendering error.
-    #[error("Template rendering error: {0}")]
-    TemplateError(String),
-}
-
-/// Status of an issue creation operation.
-#[derive(Debug, Clone, Serialize)]
-#[serde(tag = "status", rename_all = "snake_case")]
-pub enum IssueStatus {
-    /// Issue not yet created.
-    Pending,
-
-    /// Issue successfully created.
-    Created {
-        /// GitHub issue number.
-        number: u64,
-        /// GitHub issue URL.
-        url: String,
-    },
-
-    /// Issue creation skipped.
-    Skipped {
-        /// Reason for skipping.
-        reason: String,
-    },
-
-    /// Issue creation failed.
-    Failed {
-        /// Error message.
-        error: String,
-    },
-}
-
-/// A GitHub issue created in a discovered repository.
-#[derive(Debug, Clone)]
-pub struct UpgradeIssue {
-    /// Target repository.
-    pub repository: DiscoveredRepository,
-
-    /// Reference to source migration.
-    pub migration_id: String,
-
-    /// Issue title.
-    pub title: String,
-
-    /// Rendered issue body.
-    pub body: String,
-
-    /// Creation status.
-    pub status: IssueStatus,
-}
 
 /// Creates an upgrade notification issue in a repository.
 ///
@@ -141,7 +81,9 @@ pub async fn create_issue(
         // Render template
         let body = renderer
             .render_issue_template(&migration.issue_template, migration, pr_status, pr_link)
-            .map_err(|e| IssueError::TemplateError(e.to_string()))?;
+            .map_err(|e: crate::templates::TemplateError| {
+                IssueError::TemplateError(e.to_string())
+            })?;
 
         // Ensure rate limit
         ensure_core_rate_limit(octocrab).await?;
@@ -175,6 +117,72 @@ pub async fn create_issue(
                 }
             }
         }
+    }
+    .instrument(span)
+    .await
+}
+
+/// Updates an existing issue with PR information.
+///
+/// This is called after a PR is created to update the issue body with
+/// the PR link and status.
+///
+/// # Arguments
+///
+/// * `octocrab` - Authenticated GitHub client
+/// * `repository` - Repository containing the issue
+/// * `issue_number` - Issue number to update
+/// * `migration` - Migration for template rendering
+/// * `renderer` - Template renderer
+/// * `pr_status` - PR status for template
+/// * `pr_link` - PR URL for template
+///
+/// # Errors
+///
+/// Returns [`IssueError`] if the update fails.
+pub async fn update_issue_with_pr(
+    octocrab: &Octocrab,
+    repository: &DiscoveredRepository,
+    issue_number: u64,
+    migration: &Migration,
+    renderer: &TemplateRenderer,
+    pr_status: &PrStatus,
+    pr_link: Option<&str>,
+) -> Result<(), IssueError> {
+    let span = info_span!(
+        "update_issue",
+        repo = %repository.full_name,
+        issue_number = issue_number
+    );
+
+    async {
+        info!("Updating issue with PR information");
+
+        // Render updated template
+        let body = renderer
+            .render_issue_template(
+                &migration.issue_template,
+                migration,
+                Some(pr_status),
+                pr_link,
+            )
+            .map_err(|e: crate::templates::TemplateError| {
+                IssueError::TemplateError(e.to_string())
+            })?;
+
+        // Ensure rate limit
+        ensure_core_rate_limit(octocrab).await?;
+
+        // Update issue
+        octocrab
+            .issues(&repository.owner, &repository.name)
+            .update(issue_number)
+            .body(&body)
+            .send()
+            .await?;
+
+        info!("Issue updated successfully");
+        Ok(())
     }
     .instrument(span)
     .await
@@ -228,70 +236,6 @@ async fn create_github_issue(
 
     let url = issue.html_url.to_string();
     Ok((issue.number, url))
-}
-
-/// Updates an existing issue with PR information.
-///
-/// This is called after a PR is created to update the issue body with
-/// the PR link and status.
-///
-/// # Arguments
-///
-/// * `octocrab` - Authenticated GitHub client
-/// * `repository` - Repository containing the issue
-/// * `issue_number` - Issue number to update
-/// * `migration` - Migration for template rendering
-/// * `renderer` - Template renderer
-/// * `pr_status` - PR status for template
-/// * `pr_link` - PR URL for template
-///
-/// # Errors
-///
-/// Returns [`IssueError`] if the update fails.
-pub async fn update_issue_with_pr(
-    octocrab: &Octocrab,
-    repository: &DiscoveredRepository,
-    issue_number: u64,
-    migration: &Migration,
-    renderer: &TemplateRenderer,
-    pr_status: &PrStatus,
-    pr_link: Option<&str>,
-) -> Result<(), IssueError> {
-    let span = info_span!(
-        "update_issue",
-        repo = %repository.full_name,
-        issue_number = issue_number
-    );
-
-    async {
-        info!("Updating issue with PR information");
-
-        // Render updated template
-        let body = renderer
-            .render_issue_template(
-                &migration.issue_template,
-                migration,
-                Some(pr_status),
-                pr_link,
-            )
-            .map_err(|e| IssueError::TemplateError(e.to_string()))?;
-
-        // Ensure rate limit
-        ensure_core_rate_limit(octocrab).await?;
-
-        // Update issue
-        octocrab
-            .issues(&repository.owner, &repository.name)
-            .update(issue_number)
-            .body(&body)
-            .send()
-            .await?;
-
-        info!("Issue updated successfully");
-        Ok(())
-    }
-    .instrument(span)
-    .await
 }
 
 /// Checks if an error indicates permission denied.
