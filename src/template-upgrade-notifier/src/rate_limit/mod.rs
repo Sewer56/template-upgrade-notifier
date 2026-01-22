@@ -140,7 +140,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_wait_if_needed_no_wait() {
+    async fn waits_if_needed_no_wait() {
         let info = RateLimitInfo {
             remaining: 100,
             reset: 0,
@@ -152,7 +152,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_wait_if_needed_reset_passed() {
+    async fn waits_if_needed_reset_passed() {
         let info = RateLimitInfo {
             remaining: 1,
             reset: 0, // Already passed

@@ -129,7 +129,7 @@ target-file = "version.txt"
     }
 
     #[test]
-    fn test_load_valid_migration() {
+    fn load_valid_migration() {
         let temp = TempDir::new().unwrap();
         create_test_migration(temp.path());
 
@@ -146,7 +146,7 @@ target-file = "version.txt"
     }
 
     #[test]
-    fn test_load_migration_missing_metadata() {
+    fn load_migration_missing_metadata() {
         let temp = TempDir::new().unwrap();
 
         let result = Migration::load(temp.path(), "test/v1");
@@ -154,7 +154,7 @@ target-file = "version.txt"
     }
 
     #[test]
-    fn test_load_migration_without_guide_link() {
+    fn load_migration_without_guide_link() {
         let temp = TempDir::new().unwrap();
         fs::write(
             temp.path().join("metadata.toml"),

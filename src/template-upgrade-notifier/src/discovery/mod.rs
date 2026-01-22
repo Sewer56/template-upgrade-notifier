@@ -237,13 +237,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_build_search_query() {
+    fn can_build_search_query() {
         let query = build_search_query("my-template:1.0.0", "version.txt");
         assert_eq!(query, "\"my-template:1.0.0\" in:file filename:version.txt");
     }
 
     #[test]
-    fn test_deduplicate_results() {
+    fn can_deduplicate_results() {
         let results = vec![
             CodeSearchResult {
                 owner: "user".to_string(),

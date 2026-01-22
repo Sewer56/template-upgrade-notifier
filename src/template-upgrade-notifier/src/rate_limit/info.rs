@@ -18,7 +18,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_rate_limit_info() {
+    fn creates_rate_limit_info() {
         let info = RateLimitInfo {
             remaining: 10,
             reset: 1234567890,

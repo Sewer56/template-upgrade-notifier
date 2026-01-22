@@ -157,7 +157,7 @@ mod tests {
     }
 
     #[test]
-    fn test_render_simple_template() {
+    fn can_render_simple_template() {
         let renderer = TemplateRenderer::new();
         let migration = sample_migration();
 
@@ -171,7 +171,7 @@ mod tests {
     }
 
     #[test]
-    fn test_render_issue_with_pr_status() {
+    fn can_render_issue_with_pr_status() {
         let renderer = TemplateRenderer::new();
         let migration = sample_migration();
 
@@ -195,7 +195,7 @@ mod tests {
     }
 
     #[test]
-    fn test_render_conditional_eq() {
+    fn can_render_conditional_eq() {
         let renderer = TemplateRenderer::new();
         let migration = sample_migration();
 
@@ -217,7 +217,7 @@ mod tests {
     }
 
     #[test]
-    fn test_no_html_escaping() {
+    fn does_not_escape_html() {
         let renderer = TemplateRenderer::new();
         let mut migration = sample_migration();
         migration.old_string = "<script>alert('xss')</script>".to_string();

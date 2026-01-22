@@ -61,7 +61,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_pr_status_as_str() {
+    fn converts_pr_status_to_string() {
         assert_eq!(PrStatus::Pending.as_str(), "pending");
         assert_eq!(
             PrStatus::Created {

@@ -255,7 +255,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_is_permission_denied() {
+    fn can_detect_permission_denied() {
         assert!(is_permission_denied(&IssueError::PermissionDenied {
             owner: "test".to_string(),
             repo: "repo".to_string()

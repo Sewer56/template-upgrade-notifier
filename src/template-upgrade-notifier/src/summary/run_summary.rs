@@ -83,7 +83,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_run_summary_record_result() {
+    fn can_record_result() {
         let mut summary = RunSummary::new(false);
 
         summary.record_result(&ProcessingResult::Success {

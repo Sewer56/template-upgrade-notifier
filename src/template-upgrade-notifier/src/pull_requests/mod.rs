@@ -361,14 +361,14 @@ mod tests {
     }
 
     #[test]
-    fn test_branch_name_generation() {
+    fn generates_branch_name() {
         let migration = sample_migration();
         let branch = generate_branch_name(&migration);
         assert_eq!(branch, "template-upgrade/test/v1");
     }
 
     #[test]
-    fn test_pr_title_generation() {
+    fn generates_pr_title() {
         let migration = sample_migration();
         let title = generate_pr_title(&migration);
         assert_eq!(title, "Template Upgrade: test:1.0.0 -> test:1.0.1");

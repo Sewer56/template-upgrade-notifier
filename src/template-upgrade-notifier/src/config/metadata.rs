@@ -128,7 +128,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_validation_same_old_new() {
+    fn validation_same_old_new() {
         let metadata = MigrationMetadata::parse(
             r#"
 old-string = "same"
@@ -143,7 +143,7 @@ new-string = "same"
     }
 
     #[test]
-    fn test_validation_empty_old_string() {
+    fn validation_empty_old_string() {
         let metadata = MigrationMetadata::parse(
             r#"
 old-string = ""
@@ -158,7 +158,7 @@ new-string = "new"
     }
 
     #[test]
-    fn test_validation_whitespace_old_string() {
+    fn validation_whitespace_old_string() {
         let metadata = MigrationMetadata::parse(
             r#"
 old-string = "   "
@@ -173,7 +173,7 @@ new-string = "new"
     }
 
     #[test]
-    fn test_validation_empty_new_string() {
+    fn validation_empty_new_string() {
         let metadata = MigrationMetadata::parse(
             r#"
 old-string = "old"
@@ -188,7 +188,7 @@ new-string = ""
     }
 
     #[test]
-    fn test_validation_whitespace_new_string() {
+    fn validation_whitespace_new_string() {
         let metadata = MigrationMetadata::parse(
             r#"
 old-string = "old"
@@ -203,7 +203,7 @@ new-string = "   "
     }
 
     #[test]
-    fn test_validation_invalid_url() {
+    fn validation_invalid_url() {
         let metadata = MigrationMetadata::parse(
             r#"
 old-string = "old"
@@ -219,7 +219,7 @@ migration-guide-link = "not-a-url"
     }
 
     #[test]
-    fn test_validation_valid_metadata() {
+    fn validation_valid_metadata() {
         let metadata = MigrationMetadata::parse(
             r#"
 old-string = "test:1.0.0"
@@ -236,7 +236,7 @@ target-file = "version.txt"
     }
 
     #[test]
-    fn test_default_target_file() {
+    fn default_target_file_returns_correct_value() {
         assert_eq!(default_target_file(), "template-version.txt");
     }
 }

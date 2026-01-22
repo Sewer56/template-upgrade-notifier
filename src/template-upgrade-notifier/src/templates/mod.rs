@@ -58,7 +58,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_issue_title() {
+    fn can_generate_issue_title() {
         let migration = sample_migration();
         let title = generate_issue_title(&migration);
         assert_eq!(
@@ -68,7 +68,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pr_title() {
+    fn can_generate_pr_title() {
         let migration = sample_migration();
         let title = generate_pr_title(&migration);
         assert_eq!(
@@ -78,7 +78,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_branch_name() {
+    fn can_generate_branch_name() {
         let migration = sample_migration();
         let branch = generate_branch_name(&migration);
         assert_eq!(branch, "template-upgrade/my-template/v1.0.0-to-v1.0.1");

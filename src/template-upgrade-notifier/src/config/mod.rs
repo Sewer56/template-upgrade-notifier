@@ -136,7 +136,7 @@ target-file = "version.txt"
     }
 
     #[test]
-    fn test_scan_migrations() {
+    fn can_scan_migrations() {
         let temp = TempDir::new().unwrap();
 
         // Create nested migration structure
@@ -151,7 +151,7 @@ target-file = "version.txt"
     }
 
     #[test]
-    fn test_scan_migrations_missing_directory() {
+    fn scan_migrations_missing_directory() {
         let temp = TempDir::new().unwrap();
         let missing_path = temp.path().join("nonexistent");
 
@@ -160,7 +160,7 @@ target-file = "version.txt"
     }
 
     #[test]
-    fn test_scan_migrations_empty_directory() {
+    fn scan_migrations_empty_directory() {
         let temp = TempDir::new().unwrap();
 
         let migrations = scan_migrations(temp.path()).unwrap();
@@ -168,7 +168,7 @@ target-file = "version.txt"
     }
 
     #[test]
-    fn test_scan_migrations_multiple() {
+    fn scan_migrations_multiple() {
         let temp = TempDir::new().unwrap();
 
         // Create two migrations
