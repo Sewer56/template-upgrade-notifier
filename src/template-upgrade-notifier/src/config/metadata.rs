@@ -110,6 +110,62 @@ new-string = "same"
     }
 
     #[test]
+    fn test_validation_empty_old_string() {
+        let temp = TempDir::new().unwrap();
+        let metadata = parse_metadata(
+            r#"
+old-string = ""
+new-string = "new"
+"#,
+        );
+
+        let result = metadata.validate(temp.path());
+        assert!(matches!(result, Err(ConfigError::ValidationError { .. })));
+    }
+
+    #[test]
+    fn test_validation_whitespace_old_string() {
+        let temp = TempDir::new().unwrap();
+        let metadata = parse_metadata(
+            r#"
+old-string = "   "
+new-string = "new"
+"#,
+        );
+
+        let result = metadata.validate(temp.path());
+        assert!(matches!(result, Err(ConfigError::ValidationError { .. })));
+    }
+
+    #[test]
+    fn test_validation_empty_new_string() {
+        let temp = TempDir::new().unwrap();
+        let metadata = parse_metadata(
+            r#"
+old-string = "old"
+new-string = ""
+"#,
+        );
+
+        let result = metadata.validate(temp.path());
+        assert!(matches!(result, Err(ConfigError::ValidationError { .. })));
+    }
+
+    #[test]
+    fn test_validation_whitespace_new_string() {
+        let temp = TempDir::new().unwrap();
+        let metadata = parse_metadata(
+            r#"
+old-string = "old"
+new-string = "   "
+"#,
+        );
+
+        let result = metadata.validate(temp.path());
+        assert!(matches!(result, Err(ConfigError::ValidationError { .. })));
+    }
+
+    #[test]
     fn test_validation_invalid_url() {
         let temp = TempDir::new().unwrap();
         let metadata = parse_metadata(
