@@ -9,6 +9,7 @@ use std::sync::Arc;
 #[serde(tag = "provider", rename_all = "snake_case")]
 pub(crate) enum LlmConfig {
     /// OpenAI provider configuration.
+    #[serde(rename = "openai")]
     OpenAi {
         /// Model name (e.g., "gpt-4o").
         model: String,
@@ -23,6 +24,7 @@ pub(crate) enum LlmConfig {
     },
 
     /// OpenRouter provider configuration.
+    #[serde(rename = "openrouter")]
     OpenRouter {
         /// Model name (e.g., "anthropic/claude-3-opus").
         model: String,

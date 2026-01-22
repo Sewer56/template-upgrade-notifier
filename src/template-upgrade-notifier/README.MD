@@ -96,8 +96,8 @@ LLM configuration file for auto-PR generation:
 
 ```toml
 [llm]
-# Provider to use: "open_ai", "open_router", "anthropic", or "gemini"
-provider = "open_ai"
+# Provider to use: "openai", "openrouter", "anthropic", or "gemini"
+provider = "openai"
 
 # Model name (provider-specific)
 model = "gpt-4o"

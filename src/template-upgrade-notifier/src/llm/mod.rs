@@ -155,7 +155,7 @@ mod tests {
             &temp,
             r#"
 [llm]
-provider = "open_ai"
+provider = "openai"
 model = "gpt-4o"
 base-url = "https://api.openai.com/v1"
 timeout-secs = 30
@@ -184,7 +184,7 @@ timeout-secs = 30
             &temp,
             r#"
 [llm]
-provider = "open_router"
+provider = "openrouter"
 model = "anthropic/claude-3-opus"
 http-referer = "https://example.com"
 app-title = "Template Upgrade Notifier"
