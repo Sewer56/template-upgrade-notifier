@@ -62,7 +62,8 @@ pub async fn create_issue(
         info!("Creating upgrade issue");
 
         // Generate title
-        let title = generate_issue_title(migration);
+        let title = generate_issue_title(migration)
+            .map_err(|e| IssueError::TemplateError(e.to_string()))?;
 
         // Check for duplicate
         if let Some(existing) = check_duplicate_issue(octocrab, repository, &title).await? {

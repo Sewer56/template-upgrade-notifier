@@ -61,7 +61,15 @@ old-string = "my-template:1.0.0"
 new-string = "my-template:1.0.1"
 migration-guide-link = "https://example.com/docs/v1.0.1-migration"  # Optional
 target-file = "template-version.txt"  # Optional, defaults to "template-version.txt"
+
+# Title format configuration (all optional)
+issue-title-format = "Template Upgrade Available: {{old_string}} -> {{new_string}}"
+pr-title-format = "Template Upgrade: {{old_string}} -> {{new_string}}"
+branch-name-format = "template-upgrade/{{id}}"
+commit-title-format = "chore: upgrade {{old_string}} -> {{new_string}}"
 ```
+
+**Available format variables:** `old_string`, `new_string`, `id`, `target_file`, `migration_guide_link`
 
 ### issue-template.md
 
@@ -114,13 +122,13 @@ model = "gpt-4o"
 
 Alternatively, configure via environment variables:
 
-| Variable                       | Description                              |
-| ------------------------------ | ---------------------------------------- |
+| Variable                     | Description                               |
+| ---------------------------- | ----------------------------------------- |
 | `TEMPLATE_UPGRADE_LLM_MODEL` | LLM model spec for env-only configuration |
-| `OPENAI_API_KEY`             | OpenAI API key                           |
-| `OPENROUTER_API_KEY`          | OpenRouter API key                        |
+| `OPENAI_API_KEY`             | OpenAI API key                            |
+| `OPENROUTER_API_KEY`         | OpenRouter API key                        |
 | `ANTHROPIC_API_KEY`          | Anthropic API key                         |
-| `GOOGLE_API_KEY`             | Google/Gemini API key                    |
+| `GOOGLE_API_KEY`             | Google/Gemini API key                     |
 
 Use `--llm-config-path` to point at a non-default config location.
 
@@ -128,12 +136,16 @@ Use `--llm-config-path` to point at a non-default config location.
 
 Both issue and PR templates support these Handlebars variables:
 
-| Variable                   | Description                                          |
-| -------------------------- | ---------------------------------------------------- |
-| `{{old_string}}`           | Version string being replaced                        |
-| `{{new_string}}`           | New version string                                   |
-| `{{migration_guide_link}}` | URL to migration documentation (may be empty string) |
-| `{{target_file}}`          | Name of file containing version string               |
+| Variable                   | Description                                                 |
+| -------------------------- | ----------------------------------------------------------- |
+| `{{old_string}}`           | Version string being replaced                               |
+| `{{new_string}}`           | New version string                                          |
+| `{{migration_guide_link}}` | URL to migration documentation (may be empty string)        |
+| `{{target_file}}`          | Name of file containing version string                      |
+| `{{id}}`                   | Migration identifier (e.g., "my-template/v1.0.0-to-v1.0.1") |
+
+The `id` is derived from the migration folder path relative to the base migrations directory.
+For example, a migration at `migrations/my-template/v1.0.0-to-v1.0.1/metadata.toml` will have the id `"my-template/v1.0.0-to-v1.0.1"`.
 
 Issue templates also support:
 

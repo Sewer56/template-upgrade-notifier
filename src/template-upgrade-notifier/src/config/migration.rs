@@ -29,6 +29,18 @@ pub struct Migration {
 
     /// Contents of pr-template.md.
     pub pr_template: String,
+
+    /// Handlebars format for issue titles.
+    pub issue_title_format: String,
+
+    /// Handlebars format for PR titles.
+    pub pr_title_format: String,
+
+    /// Handlebars format for branch names.
+    pub branch_name_format: String,
+
+    /// Handlebars format for commit titles.
+    pub commit_title_format: String,
 }
 
 impl Migration {
@@ -94,6 +106,10 @@ impl Migration {
             target_file: metadata.target_file,
             issue_template,
             pr_template,
+            issue_title_format: metadata.issue_title_format,
+            pr_title_format: metadata.pr_title_format,
+            branch_name_format: metadata.branch_name_format,
+            commit_title_format: metadata.commit_title_format,
         })
     }
 }
@@ -169,5 +185,60 @@ new-string = "test:1.0.1"
 
         let migration = Migration::load(temp.path(), "test/v1").unwrap();
         assert_eq!(migration.migration_guide_link, None);
+    }
+
+    #[test]
+    fn load_migration_with_default_formats() {
+        let temp = TempDir::new().unwrap();
+        create_test_migration(temp.path());
+
+        let migration = Migration::load(temp.path(), "test/v1").unwrap();
+
+        // Should have default format values
+        assert_eq!(
+            migration.issue_title_format,
+            "Template Upgrade Available: {{old_string}} -> {{new_string}}"
+        );
+        assert_eq!(
+            migration.pr_title_format,
+            "Template Upgrade: {{old_string}} -> {{new_string}}"
+        );
+        assert_eq!(migration.branch_name_format, "template-upgrade/{{id}}");
+        assert_eq!(
+            migration.commit_title_format,
+            "chore: upgrade {{old_string}} -> {{new_string}}"
+        );
+    }
+
+    #[test]
+    fn load_migration_with_custom_formats() {
+        let temp = TempDir::new().unwrap();
+        fs::write(
+            temp.path().join("metadata.toml"),
+            r#"
+old-string = "test:1.0.0"
+new-string = "test:1.0.1"
+issue-title-format = "Custom: {{id}}"
+pr-title-format = "PR: {{old_string}} to {{new_string}}"
+branch-name-format = "upgrade/{{id}}"
+commit-title-format = "feat: upgrade {{old_string}}"
+"#,
+        )
+        .unwrap();
+        fs::write(temp.path().join("issue-template.md"), "content").unwrap();
+        fs::write(temp.path().join("pr-template.md"), "content").unwrap();
+
+        let migration = Migration::load(temp.path(), "test/v1").unwrap();
+
+        assert_eq!(migration.issue_title_format, "Custom: {{id}}");
+        assert_eq!(
+            migration.pr_title_format,
+            "PR: {{old_string}} to {{new_string}}"
+        );
+        assert_eq!(migration.branch_name_format, "upgrade/{{id}}");
+        assert_eq!(
+            migration.commit_title_format,
+            "feat: upgrade {{old_string}}"
+        );
     }
 }

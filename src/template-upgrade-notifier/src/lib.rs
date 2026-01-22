@@ -24,6 +24,6 @@ pub use rate_limit::{
 pub use runner::{Runner, RunnerConfig, RunnerError};
 pub use summary::{ProcessingResult, RunSummary};
 pub use templates::{
-    create_handlebars_registry, generate_branch_name, generate_issue_title, generate_pr_title,
-    TemplateError, TemplateRenderer,
+    create_handlebars_registry, generate_branch_name, generate_commit_title, generate_issue_title,
+    generate_pr_title, TemplateError, TemplateRenderer,
 };

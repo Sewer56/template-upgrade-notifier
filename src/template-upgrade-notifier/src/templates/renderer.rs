@@ -143,6 +143,10 @@ impl TemplateRenderer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::{
+        default_branch_name_format, default_commit_title_format, default_issue_title_format,
+        default_pr_title_format,
+    };
 
     fn sample_migration() -> Migration {
         Migration {
@@ -153,6 +157,10 @@ mod tests {
             target_file: "template-version.txt".to_string(),
             issue_template: String::new(),
             pr_template: String::new(),
+            issue_title_format: default_issue_title_format(),
+            pr_title_format: default_pr_title_format(),
+            branch_name_format: default_branch_name_format(),
+            commit_title_format: default_commit_title_format(),
         }
     }
 

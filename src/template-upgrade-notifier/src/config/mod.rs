@@ -8,7 +8,10 @@ mod metadata;
 mod migration;
 
 pub use error::ConfigError;
-pub use metadata::MigrationMetadata;
+pub use metadata::{
+    default_branch_name_format, default_commit_title_format, default_issue_title_format,
+    default_pr_title_format, MigrationMetadata,
+};
 pub use migration::Migration;
 
 use std::path::Path;
