@@ -6,7 +6,7 @@ description = "A GitHub Action that scans repositories for outdated template ver
 repository = "https://github.com/Sewer56/template-upgrade-notifier"
 license-file = "../../LICENSE"
 include = ["src/**/*", "../../LICENSE"]
-readme = "../../README.MD"
+readme = "README.MD"
 
 [dependencies]
 octocrab = "0.49"

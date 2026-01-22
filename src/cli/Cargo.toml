@@ -5,7 +5,7 @@ edition = "2021"
 description = "CLI for A GitHub Action that scans repositories for outdated template versions and creates upgrade notification issues with LLM-powered auto-fix PRs"
 repository = "https://github.com/Sewer56/template-upgrade-notifier"
 license-file = "../../LICENSE"
-readme = "../../README.MD"
+readme = "README.MD"
 publish = false
 
 [dependencies]
