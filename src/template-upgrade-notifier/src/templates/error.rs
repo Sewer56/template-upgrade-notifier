@@ -10,4 +10,13 @@ pub enum TemplateError {
     /// Template registration error.
     #[error("Template registration error: {0}")]
     RegistrationError(#[from] handlebars::TemplateError),
+
+    /// Invalid git branch name.
+    #[error("Invalid branch name '{branch}': {reason}")]
+    InvalidBranchName {
+        /// The invalid branch name.
+        branch: String,
+        /// Reason for invalidity.
+        reason: String,
+    },
 }

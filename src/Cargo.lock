@@ -858,6 +858,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "gix-validate"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ec1eff98d91941f47766367cba1be746bab662bad761d9891ae6f7882f7840b"
+dependencies = [
+ "bstr",
+]
+
+[[package]]
 name = "globset"
 version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3041,7 +3050,9 @@ dependencies = [
 name = "template-upgrade-notifier"
 version = "0.1.0"
 dependencies = [
+ "bstr",
  "futures",
+ "gix-validate",
  "handlebars",
  "llm-coding-tools-serdesai",
  "octocrab",

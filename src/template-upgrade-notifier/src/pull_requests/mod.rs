@@ -15,9 +15,9 @@ use crate::config::Migration;
 use crate::discovery::DiscoveredRepository;
 use crate::llm::apply_migration;
 use crate::rate_limit::ensure_core_rate_limit;
-use crate::templates::generate_branch_name;
-use crate::templates::generate_pr_title;
-use crate::templates::TemplateRenderer;
+use crate::templates::{
+    generate_branch_name, generate_commit_title, generate_pr_title, TemplateRenderer,
+};
 use octocrab::Octocrab;
 use std::path::Path;
 use std::process::Stdio;
@@ -62,8 +62,12 @@ pub async fn create_pr(
     async {
         info!("Creating upgrade PR");
 
-        let branch_name = generate_branch_name(migration);
-        let title = generate_pr_title(migration);
+        let branch_name = generate_branch_name(migration).map_err(|e| PrError::LlmFailed {
+            message: format!("Failed to generate branch name: {e}"),
+        })?;
+        let title = generate_pr_title(migration).map_err(|e| PrError::LlmFailed {
+            message: format!("Failed to generate PR title: {e}"),
+        })?;
 
         // Create temp directory for clone
         let temp_dir = tempfile::tempdir().map_err(|e| PrError::CloneFailed {
@@ -264,15 +268,15 @@ async fn commit_and_push(
     run_git_command(path, &["add", "-A"]).await?;
 
     // Commit
+    let commit_title = generate_commit_title(migration).map_err(|e| PrError::LlmFailed {
+        message: format!("Failed to generate commit title: {e}"),
+    })?;
     let guide_line = migration
         .migration_guide_link
         .as_ref()
         .map(|g| format!("\n\nMigration guide: {g}"))
         .unwrap_or_default();
-    let commit_msg = format!(
-        "chore: upgrade {} -> {}{}",
-        migration.old_string, migration.new_string, guide_line
-    );
+    let commit_msg = format!("{commit_title}{guide_line}");
     run_git_command(path, &["commit", "-m", &commit_msg]).await?;
 
     // Push
@@ -345,6 +349,10 @@ async fn create_github_pr(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::{
+        default_branch_name_format, default_commit_title_format, default_issue_title_format,
+        default_pr_title_format,
+    };
 
     fn sample_migration() -> Migration {
         Migration {
@@ -355,20 +363,31 @@ mod tests {
             target_file: "version.txt".to_string(),
             issue_template: String::new(),
             pr_template: String::new(),
+            issue_title_format: default_issue_title_format(),
+            pr_title_format: default_pr_title_format(),
+            branch_name_format: default_branch_name_format(),
+            commit_title_format: default_commit_title_format(),
         }
     }
 
     #[test]
     fn generates_branch_name() {
         let migration = sample_migration();
-        let branch = generate_branch_name(&migration);
+        let branch = generate_branch_name(&migration).unwrap();
         assert_eq!(branch, "template-upgrade/test/v1");
     }
 
     #[test]
     fn generates_pr_title() {
         let migration = sample_migration();
-        let title = generate_pr_title(&migration);
+        let title = generate_pr_title(&migration).unwrap();
         assert_eq!(title, "Template Upgrade: test:1.0.0 -> test:1.0.1");
+    }
+
+    #[test]
+    fn generates_commit_title() {
+        let migration = sample_migration();
+        let title = generate_commit_title(&migration).unwrap();
+        assert_eq!(title, "chore: upgrade test:1.0.0 -> test:1.0.1");
     }
 }

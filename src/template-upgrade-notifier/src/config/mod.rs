@@ -8,7 +8,10 @@ mod metadata;
 mod migration;
 
 pub use error::ConfigError;
-pub use metadata::MigrationMetadata;
+pub use metadata::{
+    default_branch_name_format, default_commit_title_format, default_issue_title_format,
+    default_pr_title_format, MigrationMetadata,
+};
 pub use migration::Migration;
 
 use std::path::Path;
@@ -80,11 +83,12 @@ fn scan_directory_recursive(
             let metadata_path = path.join("metadata.toml");
             if metadata_path.exists() {
                 // This is a migration directory
+                // Normalize path separators to forward slashes for cross-platform consistency
                 let migration_id = path
                     .strip_prefix(base_path)
                     .unwrap_or(&path)
                     .to_string_lossy()
-                    .to_string();
+                    .replace('\\', "/");
 
                 match Migration::load(&path, &migration_id) {
                     Ok(migration) => {
