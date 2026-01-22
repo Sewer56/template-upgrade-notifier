@@ -230,6 +230,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let migrations = scan_migrations(Path::new("./migrations"))?;
     let renderer = TemplateRenderer::new();
     let mut summary = RunSummary::new(false);
+    let llm_config_path = Path::new("./config.toml");
 
     for migration in &migrations {
         // Discover and enrich repositories with default branch info
@@ -239,7 +240,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         for repo in &repositories {
             // First, try to create an auto-fix PR
-            let pr_result = create_pr(&octocrab, repo, &migration, &renderer, &token).await?;
+            let pr_result = create_pr(
+                &octocrab, repo, &migration, &renderer, &token, llm_config_path
+            ).await?;
 
             // Then create an issue with PR status
             let issue = create_issue(
