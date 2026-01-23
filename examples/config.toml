@@ -42,6 +42,12 @@ model = "gpt-4o"
 #   - GEMINI_TIMEOUT_SECS
 # timeout-secs = 600
 
+# Sampling temperature (optional, 0.0-2.0)
+# Lower values = more deterministic, higher = more creative
+# If not set, the API's default temperature is used
+# Environment variable (overrides config): TEMPLATE_UPGRADE_LLM_TEMPERATURE
+# temperature = 0.2
+
 # OpenRouter-specific settings (optional)
 # HTTP Referer header for OpenRouter API
 # Environment variable (overrides config): OPENROUTER_HTTP_REFERER
