@@ -4,6 +4,7 @@
 //! upgrade notification issues with optional auto-fix PRs.
 
 use clap::Parser;
+use rustls::crypto::aws_lc_rs;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use template_upgrade_notifier::{RunSummary, Runner, RunnerConfig, RunnerError};
@@ -41,6 +42,14 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> ExitCode {
+    // Install aws-lc-rs as the default rustls crypto provider.
+    // This must happen before any TLS operations. Required because rustls 0.23+
+    // panics at runtime if both ring and aws-lc-rs features are enabled without
+    // explicitly selecting one (which happens due to mixed upstream dependencies).
+    aws_lc_rs::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
+
     // Initialize tracing
     init_tracing();
 
