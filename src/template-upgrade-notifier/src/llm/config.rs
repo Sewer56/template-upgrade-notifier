@@ -21,6 +21,8 @@ pub(crate) enum LlmConfig {
         /// Timeout in seconds (optional).
         #[serde(rename = "timeout-secs")]
         timeout_secs: Option<u64>,
+        /// Sampling temperature (optional, 0.0-2.0).
+        temperature: Option<f64>,
     },
 
     /// OpenRouter provider configuration.
@@ -36,6 +38,8 @@ pub(crate) enum LlmConfig {
         /// App title header (optional).
         #[serde(rename = "app-title")]
         app_title: Option<String>,
+        /// Sampling temperature (optional, 0.0-2.0).
+        temperature: Option<f64>,
     },
 
     /// Anthropic provider configuration.
@@ -50,6 +54,8 @@ pub(crate) enum LlmConfig {
         /// Timeout in seconds (optional).
         #[serde(rename = "timeout-secs")]
         timeout_secs: Option<u64>,
+        /// Sampling temperature (optional, 0.0-2.0).
+        temperature: Option<f64>,
     },
 
     /// Gemini provider configuration.
@@ -64,10 +70,22 @@ pub(crate) enum LlmConfig {
         /// Timeout in seconds (optional).
         #[serde(rename = "timeout-secs")]
         timeout_secs: Option<u64>,
+        /// Sampling temperature (optional, 0.0-2.0).
+        temperature: Option<f64>,
     },
 }
 
 impl LlmConfig {
+    /// Returns the configured temperature, if any.
+    pub(crate) fn temperature(&self) -> Option<f64> {
+        match self {
+            Self::OpenAi { temperature, .. }
+            | Self::OpenRouter { temperature, .. }
+            | Self::Anthropic { temperature, .. }
+            | Self::Gemini { temperature, .. } => *temperature,
+        }
+    }
+
     /// Builds a model from the configuration.
     pub(crate) fn build_model(&self) -> Result<Arc<dyn Model>, LlmError> {
         match self {
@@ -76,6 +94,7 @@ impl LlmConfig {
                 api_key,
                 http_referer,
                 app_title,
+                ..
             } => {
                 // Env vars take precedence over config values
                 let resolved_key = std::env::var("OPENROUTER_API_KEY")
@@ -110,18 +129,21 @@ impl LlmConfig {
                 api_key,
                 base_url,
                 timeout_secs,
+                ..
             } => build_configured_model("openai", model, api_key, base_url, timeout_secs),
             Self::Anthropic {
                 model,
                 api_key,
                 base_url,
                 timeout_secs,
+                ..
             } => build_configured_model("anthropic", model, api_key, base_url, timeout_secs),
             Self::Gemini {
                 model,
                 api_key,
                 base_url,
                 timeout_secs,
+                ..
             } => build_configured_model("gemini", model, api_key, base_url, timeout_secs),
         }
     }
