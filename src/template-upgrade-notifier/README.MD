@@ -135,6 +135,8 @@ Alternatively, configure via environment variables:
 | `ANTHROPIC_API_KEY`                | Anthropic API key                         |
 | `GOOGLE_API_KEY`                   | Google/Gemini API key                     |
 
+**Note:** Environment variables take precedence over config file settings when both are present.
+
 Use `--llm-config-path` to point at a non-default config location.
 
 ## Template Variables

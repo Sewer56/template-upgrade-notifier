@@ -67,16 +67,29 @@ fn resolve_model(config: Option<&LlmConfig>) -> Result<Arc<dyn serdes_ai_models:
     serdes_ai_models::infer_model(&model_spec).map_err(LlmError::Model)
 }
 
+/// Validates that a temperature value is finite and within 0.0-2.0.
+fn validate_temperature(value: f64, source: &str) -> Option<f64> {
+    if !value.is_finite() || !(0.0..=2.0).contains(&value) {
+        tracing::warn!(
+            "Invalid temperature {value} from {source}: must be finite and in range 0.0-2.0"
+        );
+        return None;
+    }
+    Some(value)
+}
+
 /// Resolves the temperature from environment or config.
 ///
 /// Environment variable takes precedence over config file.
 fn resolve_temperature(config: Option<&LlmConfig>) -> Option<f64> {
     if let Ok(val) = std::env::var(TEMPERATURE_ENV) {
         if let Ok(temp) = val.parse::<f64>() {
-            return Some(temp);
+            return validate_temperature(temp, "environment variable");
         }
     }
-    config.and_then(LlmConfig::temperature)
+    config
+        .and_then(LlmConfig::temperature)
+        .and_then(|t| validate_temperature(t, "config file"))
 }
 
 /// Loads the LLM config file if it exists.
