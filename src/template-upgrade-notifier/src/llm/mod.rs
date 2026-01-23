@@ -16,7 +16,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 const MODEL_ENV: &str = "TEMPLATE_UPGRADE_LLM_MODEL";
-const LLM_TIMEOUT_SECS: u64 = 600;
+const LLM_TIMEOUT_SECS: u64 = 3600; // 60 minutes
 
 /// Top-level structure for `config.toml` with a single `[llm]` section.
 #[derive(Debug, Clone, Deserialize)]
