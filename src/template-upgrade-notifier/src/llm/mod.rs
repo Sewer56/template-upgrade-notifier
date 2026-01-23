@@ -16,6 +16,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 const MODEL_ENV: &str = "TEMPLATE_UPGRADE_LLM_MODEL";
+const TEMPERATURE_ENV: &str = "TEMPLATE_UPGRADE_LLM_TEMPERATURE";
 const LLM_TIMEOUT_SECS: u64 = 3600; // 60 minutes
 
 /// Top-level structure for `config.toml` with a single `[llm]` section.
@@ -41,8 +42,10 @@ pub(crate) async fn apply_migration(
     config_path: &Path,
     migration: &Migration,
 ) -> Result<(), LlmError> {
-    let model = resolve_model(config_path)?;
-    let agent = build_agent(model, repo_path)?;
+    let config = load_config(config_path)?;
+    let model = resolve_model(config.as_ref())?;
+    let temperature = resolve_temperature(config.as_ref());
+    let agent = build_agent(model, repo_path, temperature)?;
     let prompt = build_prompt(migration);
 
     tokio::time::timeout(
@@ -56,12 +59,37 @@ pub(crate) async fn apply_migration(
 }
 
 /// Resolves the LLM model from config or environment.
-fn resolve_model(config_path: &Path) -> Result<Arc<dyn serdes_ai_models::Model>, LlmError> {
-    if let Some(config) = load_config(config_path)? {
+fn resolve_model(config: Option<&LlmConfig>) -> Result<Arc<dyn serdes_ai_models::Model>, LlmError> {
+    if let Some(config) = config {
         return config.build_model();
     }
     let model_spec = std::env::var(MODEL_ENV).map_err(|_| LlmError::MissingModel)?;
     serdes_ai_models::infer_model(&model_spec).map_err(LlmError::Model)
+}
+
+/// Validates that a temperature value is finite and within 0.0-2.0.
+fn validate_temperature(value: f64, source: &str) -> Option<f64> {
+    if !value.is_finite() || !(0.0..=2.0).contains(&value) {
+        tracing::warn!(
+            "Invalid temperature {value} from {source}: must be finite and in range 0.0-2.0"
+        );
+        return None;
+    }
+    Some(value)
+}
+
+/// Resolves the temperature from environment or config.
+///
+/// Environment variable takes precedence over config file.
+fn resolve_temperature(config: Option<&LlmConfig>) -> Option<f64> {
+    if let Ok(val) = std::env::var(TEMPERATURE_ENV) {
+        if let Ok(temp) = val.parse::<f64>() {
+            return validate_temperature(temp, "environment variable");
+        }
+    }
+    config
+        .and_then(LlmConfig::temperature)
+        .and_then(|t| validate_temperature(t, "config file"))
 }
 
 /// Loads the LLM config file if it exists.
@@ -84,6 +112,7 @@ fn load_config(path: &Path) -> Result<Option<LlmConfig>, LlmError> {
 fn build_agent(
     model: Arc<dyn serdes_ai_models::Model>,
     path: &Path,
+    temperature: Option<f64>,
 ) -> Result<Agent<(), String>, LlmError> {
     let resolver = AllowedPathResolver::new([path])?;
     let read = ReadTool::<true>::new(resolver.clone());
@@ -95,15 +124,19 @@ fn build_agent(
     let path_str = path.display().to_string();
     let mut prompt_builder = SystemPromptBuilder::new().working_directory(path_str);
 
-    Ok(AgentBuilder::from_arc(model)
+    let mut builder = AgentBuilder::from_arc(model)
         .tool(prompt_builder.track(read))
         .tool(prompt_builder.track(edit))
         .tool(prompt_builder.track(glob))
         .tool(prompt_builder.track(grep))
         .tool(prompt_builder.track(bash))
-        .system_prompt(prompt_builder.build())
-        .temperature(0.2)
-        .build())
+        .system_prompt(prompt_builder.build());
+
+    if let Some(temp) = temperature {
+        builder = builder.temperature(temp);
+    }
+
+    Ok(builder.build())
 }
 
 /// Builds the migration prompt for the LLM.
@@ -256,5 +289,71 @@ model = "gemini-2.0-flash"
         let path = write_config(&temp, "not = [valid");
         let error = load_config(&path).unwrap_err();
         assert!(matches!(error, LlmError::Toml { .. }));
+    }
+
+    #[test]
+    fn load_config_parses_temperature() {
+        let temp = TempDir::new().unwrap();
+        let path = write_config(
+            &temp,
+            r#"
+[llm]
+provider = "openai"
+model = "gpt-4o"
+temperature = 0.5
+"#,
+        );
+        let config = load_config(&path).unwrap().unwrap();
+        assert_eq!(config.temperature(), Some(0.5));
+    }
+
+    #[test]
+    fn load_config_temperature_defaults_to_none() {
+        let temp = TempDir::new().unwrap();
+        let path = write_config(
+            &temp,
+            r#"
+[llm]
+provider = "anthropic"
+model = "claude-3-5-sonnet-20241022"
+"#,
+        );
+        let config = load_config(&path).unwrap().unwrap();
+        assert_eq!(config.temperature(), None);
+    }
+
+    #[test]
+    fn resolve_temperature_returns_none_without_config_or_env() {
+        temp_env::with_var_unset(TEMPERATURE_ENV, || {
+            assert_eq!(resolve_temperature(None), None);
+        });
+    }
+
+    #[test]
+    fn resolve_temperature_uses_config_value() {
+        temp_env::with_var_unset(TEMPERATURE_ENV, || {
+            let config = LlmConfig::OpenAi {
+                model: "gpt-4o".to_string(),
+                api_key: None,
+                base_url: None,
+                timeout_secs: None,
+                temperature: Some(0.3),
+            };
+            assert_eq!(resolve_temperature(Some(&config)), Some(0.3));
+        });
+    }
+
+    #[test]
+    fn resolve_temperature_prefers_env_over_config() {
+        temp_env::with_var(TEMPERATURE_ENV, Some("0.8"), || {
+            let config = LlmConfig::OpenAi {
+                model: "gpt-4o".to_string(),
+                api_key: None,
+                base_url: None,
+                timeout_secs: None,
+                temperature: Some(0.3),
+            };
+            assert_eq!(resolve_temperature(Some(&config)), Some(0.8));
+        });
     }
 }

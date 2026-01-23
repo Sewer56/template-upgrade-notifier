@@ -70,23 +70,24 @@ template-upgrade-notifier-cli --help
 
 ## Environment Variables
 
-| Variable                     | Description                                                   |
-| ---------------------------- | ------------------------------------------------------------- |
-| `GITHUB_TOKEN`               | GitHub Personal Access Token (alternative to `--token`)       |
-| `RUST_LOG`                   | Logging level filter (e.g., `debug`, `info`, `warn`, `error`) |
-| `TEMPLATE_UPGRADE_LLM_MODEL` | LLM model spec for env-only configuration                     |
-| `OPENAI_API_KEY`             | OpenAI API key                                                |
-| `OPENAI_BASE_URL`            | OpenAI base URL (for proxies/Azure)                           |
-| `OPENAI_TIMEOUT_SECS`        | OpenAI request timeout in seconds                             |
-| `OPENROUTER_API_KEY`         | OpenRouter API key                                            |
-| `OPENROUTER_HTTP_REFERER`    | OpenRouter HTTP Referer header                                |
-| `OPENROUTER_APP_TITLE`       | OpenRouter app title header                                   |
-| `ANTHROPIC_API_KEY`          | Anthropic API key                                             |
-| `ANTHROPIC_BASE_URL`         | Anthropic base URL                                            |
-| `ANTHROPIC_TIMEOUT_SECS`     | Anthropic request timeout in seconds                          |
-| `GOOGLE_API_KEY`             | Google/Gemini API key                                         |
-| `GEMINI_BASE_URL`            | Gemini base URL                                               |
-| `GEMINI_TIMEOUT_SECS`        | Gemini request timeout in seconds                             |
+| Variable                           | Description                                                   |
+| ---------------------------------- | ------------------------------------------------------------- |
+| `GITHUB_TOKEN`                     | GitHub Personal Access Token (alternative to `--token`)       |
+| `RUST_LOG`                         | Logging level filter (e.g., `debug`, `info`, `warn`, `error`) |
+| `TEMPLATE_UPGRADE_LLM_MODEL`       | LLM model spec for env-only configuration                     |
+| `TEMPLATE_UPGRADE_LLM_TEMPERATURE` | Sampling temperature (0.0-2.0)                                |
+| `OPENAI_API_KEY`                   | OpenAI API key                                                |
+| `OPENAI_BASE_URL`                  | OpenAI base URL (for proxies/Azure)                           |
+| `OPENAI_TIMEOUT_SECS`              | OpenAI request timeout in seconds                             |
+| `OPENROUTER_API_KEY`               | OpenRouter API key                                            |
+| `OPENROUTER_HTTP_REFERER`          | OpenRouter HTTP Referer header                                |
+| `OPENROUTER_APP_TITLE`             | OpenRouter app title header                                   |
+| `ANTHROPIC_API_KEY`                | Anthropic API key                                             |
+| `ANTHROPIC_BASE_URL`               | Anthropic base URL                                            |
+| `ANTHROPIC_TIMEOUT_SECS`           | Anthropic request timeout in seconds                          |
+| `GOOGLE_API_KEY`                   | Google/Gemini API key                                         |
+| `GEMINI_BASE_URL`                  | Gemini base URL                                               |
+| `GEMINI_TIMEOUT_SECS`              | Gemini request timeout in seconds                             |
 
 ## LLM Configuration (for Auto-PR)
 
@@ -99,6 +100,7 @@ model = "gpt-4o"
 # api_key = ""       # Optional: falls back to provider env var
 # base-url = ""      # Optional: custom endpoint (proxies, Azure OpenAI, etc.)
 # timeout-secs = 60  # Optional: request timeout in seconds
+# temperature = 0.2  # Optional: sampling temperature (0.0-2.0)
 ```
 
 For OpenRouter, additional headers are supported:
@@ -109,6 +111,7 @@ provider = "openrouter"
 model = "anthropic/claude-3-opus"
 # http-referer = "https://example.com"        # Optional: HTTP Referer header
 # app-title = "Template Upgrade Notifier"     # Optional: app title header
+# temperature = 0.2                           # Optional: sampling temperature (0.0-2.0)
 ```
 
 Or set `TEMPLATE_UPGRADE_LLM_MODEL` environment variable for simple cases (e.g., `openai:gpt-4o`).

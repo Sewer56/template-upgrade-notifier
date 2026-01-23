@@ -118,17 +118,24 @@ model = "gpt-4o"
 
 # Optional: Timeout in seconds (default: 600)
 # timeout-secs = 600
+
+# Optional: Sampling temperature (0.0-2.0)
+# If not set, the API's default temperature is used
+# temperature = 0.2
 ```
 
 Alternatively, configure via environment variables:
 
-| Variable                     | Description                               |
-| ---------------------------- | ----------------------------------------- |
-| `TEMPLATE_UPGRADE_LLM_MODEL` | LLM model spec for env-only configuration |
-| `OPENAI_API_KEY`             | OpenAI API key                            |
-| `OPENROUTER_API_KEY`         | OpenRouter API key                        |
-| `ANTHROPIC_API_KEY`          | Anthropic API key                         |
-| `GOOGLE_API_KEY`             | Google/Gemini API key                     |
+| Variable                           | Description                               |
+| ---------------------------------- | ----------------------------------------- |
+| `TEMPLATE_UPGRADE_LLM_MODEL`       | LLM model spec for env-only configuration |
+| `TEMPLATE_UPGRADE_LLM_TEMPERATURE` | Sampling temperature (0.0-2.0)            |
+| `OPENAI_API_KEY`                   | OpenAI API key                            |
+| `OPENROUTER_API_KEY`               | OpenRouter API key                        |
+| `ANTHROPIC_API_KEY`                | Anthropic API key                         |
+| `GOOGLE_API_KEY`                   | Google/Gemini API key                     |
+
+**Note:** Environment variables take precedence over config file settings when both are present.
 
 Use `--llm-config-path` to point at a non-default config location.
 

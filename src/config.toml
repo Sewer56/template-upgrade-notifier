@@ -25,3 +25,7 @@ model = "gpt-4o"
 
 # Optional: Timeout in seconds (default: 600)
 # timeout-secs = 600
+
+# Optional: Sampling temperature (0.0-2.0)
+# If not set, the API's default temperature is used
+# temperature = 0.2
