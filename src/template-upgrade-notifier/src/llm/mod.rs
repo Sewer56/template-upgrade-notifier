@@ -311,35 +311,36 @@ model = "claude-3-5-sonnet-20241022"
 
     #[test]
     fn resolve_temperature_returns_none_without_config_or_env() {
-        std::env::remove_var(TEMPERATURE_ENV);
-        assert_eq!(resolve_temperature(None), None);
+        temp_env::with_var_unset(TEMPERATURE_ENV, || {
+            assert_eq!(resolve_temperature(None), None);
+        });
     }
 
     #[test]
     fn resolve_temperature_uses_config_value() {
-        std::env::remove_var(TEMPERATURE_ENV);
-        let config = LlmConfig::OpenAi {
-            model: "gpt-4o".to_string(),
-            api_key: None,
-            base_url: None,
-            timeout_secs: None,
-            temperature: Some(0.3),
-        };
-        assert_eq!(resolve_temperature(Some(&config)), Some(0.3));
+        temp_env::with_var_unset(TEMPERATURE_ENV, || {
+            let config = LlmConfig::OpenAi {
+                model: "gpt-4o".to_string(),
+                api_key: None,
+                base_url: None,
+                timeout_secs: None,
+                temperature: Some(0.3),
+            };
+            assert_eq!(resolve_temperature(Some(&config)), Some(0.3));
+        });
     }
 
     #[test]
     fn resolve_temperature_prefers_env_over_config() {
-        std::env::set_var(TEMPERATURE_ENV, "0.8");
-        let config = LlmConfig::OpenAi {
-            model: "gpt-4o".to_string(),
-            api_key: None,
-            base_url: None,
-            timeout_secs: None,
-            temperature: Some(0.3),
-        };
-        let result = resolve_temperature(Some(&config));
-        std::env::remove_var(TEMPERATURE_ENV);
-        assert_eq!(result, Some(0.8));
+        temp_env::with_var(TEMPERATURE_ENV, Some("0.8"), || {
+            let config = LlmConfig::OpenAi {
+                model: "gpt-4o".to_string(),
+                api_key: None,
+                base_url: None,
+                timeout_secs: None,
+                temperature: Some(0.3),
+            };
+            assert_eq!(resolve_temperature(Some(&config)), Some(0.8));
+        });
     }
 }
