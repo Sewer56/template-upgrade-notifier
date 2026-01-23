@@ -13,7 +13,7 @@ new-string = "reloaded-templates-rust:1.1.0"
 migration-guide-link = "https://reloaded-project.github.io/reloaded-templates-rust/migration/v1.1.0/"
 
 # File containing the version string (optional, default: "template-version.txt")
-target-file = ".github/template-version.txt"
+target-file = "template-version.txt"
 
 # Title format customization (all optional)
 # Available variables: {{old_string}}, {{new_string}}, {{id}}, {{target_file}}, {{migration_guide_link}}
