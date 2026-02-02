@@ -277,9 +277,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.54"
+version = "4.5.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6e6ff9dcd79cff5cd969a17a545d79e84ab086e444102a591e288a8aa3ce394"
+checksum = "a75ca66430e33a14957acc24c5077b503e7d374151b2b4b3a10c83b4ceb4be0e"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -287,9 +287,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.54"
+version = "4.5.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa42cf4d2b7a41bc8f663a7cab4031ebafa1bf3875705bfaf8466dc60ab52c00"
+checksum = "793207c7fa6300a0608d1080b858e5fdbe713cdc1c8db9fb17777d8a13e63df0"
 dependencies = [
  "anstream",
  "anstyle",
@@ -299,9 +299,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.5.49"
+version = "4.5.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a0b5487afeab2deb2ff4e03a807ad1a03ac532ff5a2cee5d86884440c7f7671"
+checksum = "a92793da1a46a5f2a02a6f4c46c6496b28c43638adea8306fcb0caa1634f24e5"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -2341,9 +2341,9 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.23.35"
+version = "0.23.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "533f54bc6a7d4f647e46ad909549eda97bf5afc1585190ef692b4286b198bd8f"
+checksum = "c665f33d38cea657d9614f766881e4d510e0eda4239891eea56b4cadcf01801b"
 dependencies = [
  "aws-lc-rs",
  "log",
@@ -2621,9 +2621,9 @@ dependencies = [
 
 [[package]]
 name = "serdes-ai"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "529a55f25c8f40f691c1ccdbbd7e6e0f7c610365b0848a4affcdc5444cbbb9aa"
+checksum = "08ecdfafc0f5b826c294343ac13e0489b77166c4f74c975718871c3d7f78dc90"
 dependencies = [
  "futures",
  "serdes-ai-agent",
@@ -2642,9 +2642,9 @@ dependencies = [
 
 [[package]]
 name = "serdes-ai-agent"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb86956517388c219f8bdcd2d06a26323bcd209aa62e975986747f48d0764383"
+checksum = "ce21620d6e26ed1549f4c6c6e3d0bf4a914f852daec6157841ce540c71266c21"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2659,14 +2659,15 @@ dependencies = [
  "serdes-ai-tools",
  "thiserror 1.0.69",
  "tokio",
+ "tokio-util",
  "uuid",
 ]
 
 [[package]]
 name = "serdes-ai-core"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0edca768fae68ebc176484581627d6138abeb68df0bd5643d0b858a54898986e"
+checksum = "e503162b42c05ff18d546472b0d97f34b97e7f91b0b70642838cbcfc3cb908ae"
 dependencies = [
  "anyhow",
  "base64",
@@ -2684,9 +2685,9 @@ dependencies = [
 
 [[package]]
 name = "serdes-ai-macros"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0866b17dfd0172f3d0f58126e6ad2572edff6be55fbce74d3a96e5d9bb150557"
+checksum = "d37c3eaf30aaeb5b6c9e0bedecbdf278b2a73cdc3ffae2bdd05b86dbd01a128f"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -2696,9 +2697,9 @@ dependencies = [
 
 [[package]]
 name = "serdes-ai-models"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43e45f57f5d00cdcc56a4c455bdd29180dc79989321f88d6ad1a7872df8a6c85"
+checksum = "3fcd259396e6921ca0adb4389e823b2fcf55de9b49825e73c31a23bc7037fb30"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2723,9 +2724,9 @@ dependencies = [
 
 [[package]]
 name = "serdes-ai-output"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9a7840de58a2c7a353f01efa0001b97d7d771df9d8cf9dac16d726bda880cce"
+checksum = "85f40ecbf06801a99e3b56912ba16dcd91f0b4ce446be17a4590aeba3b89203f"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2744,9 +2745,9 @@ dependencies = [
 
 [[package]]
 name = "serdes-ai-providers"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8066463375ef9f3d96808cf9c2d9d0889090d99f797150b0b3ea5dd16fb3b6b"
+checksum = "d8802bd7a6b624c28b0d6e649a395da2b9254fb20967a211ac48ec0bc8c98e68"
 dependencies = [
  "async-trait",
  "base64",
@@ -2766,9 +2767,9 @@ dependencies = [
 
 [[package]]
 name = "serdes-ai-retries"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42080e96dd393ab010836de92d19b3e28e023e788d0b2ebbd66fb2774b283111"
+checksum = "589d8666f1625002caa86d5b56a3321679beaff3b1bda480f753dafc804ab512"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2782,9 +2783,9 @@ dependencies = [
 
 [[package]]
 name = "serdes-ai-streaming"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e372252366e5b85da53ed1a3106ea4c1a4216f1dd39ebaaf1a7f04ddced3842b"
+checksum = "a9e1f776d0e4778a3d63a8eba2fc127b5f21140770d92afb337e4141e24cb583"
 dependencies = [
  "async-trait",
  "bytes",
@@ -2802,9 +2803,9 @@ dependencies = [
 
 [[package]]
 name = "serdes-ai-tools"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9acc8f423aaa6e83ff6bb2ecac6c51651e9e82a7f38a5e6acb929e68eaa13b55"
+checksum = "b2580a324d0c28c178a1ec8fde2486d28ece26360129a06d0d9decae27a499d0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2822,9 +2823,9 @@ dependencies = [
 
 [[package]]
 name = "serdes-ai-toolsets"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0749ffa1aad64623e00d00217dcf72aa95853d52159a4bfe89927c9308d7c67"
+checksum = "8003c151edb99d6ca6cde5782c04e3f5ea9253b21539f512a75abe1438558935"
 dependencies = [
  "async-trait",
  "indexmap",
@@ -3270,9 +3271,9 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.9.10+spec-1.1.0"
+version = "0.9.11+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0825052159284a1a8b4d6c0c86cbc801f2da5afd2b225fa548c72f2e74002f48"
+checksum = "f3afc9a848309fe1aaffaed6e1546a7a14de1f935dc9d89d32afd9a44bab7c46"
 dependencies = [
  "indexmap",
  "serde_core",
