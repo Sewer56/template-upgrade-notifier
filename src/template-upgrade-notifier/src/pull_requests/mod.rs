@@ -332,18 +332,14 @@ async fn create_github_pr(
         .send()
         .await?;
 
+    let number = pr.number.unwrap_or(0);
     let url = pr
         .html_url
         .as_ref()
         .map(|u| u.to_string())
-        .unwrap_or_else(|| {
-            format!(
-                "https://github.com/{}/pull/{}",
-                repository.full_name, pr.number
-            )
-        });
+        .unwrap_or_else(|| format!("https://github.com/{}/pull/{number}", repository.full_name));
 
-    Ok((pr.number, url))
+    Ok((number, url))
 }
 
 #[cfg(test)]
